@@ -1,4 +1,5 @@
 .venv/
+.uv-cache/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -6,3 +7,4 @@ __pycache__/
 outputs/
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
+build
