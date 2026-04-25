@@ -1,0 +1,30 @@
+spec_version: 1
+name: repropilot
+version: "0.1.0"
+description: "ReproPilot — RL training environment for evidence-backed research claim and methodology auditing."
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+
+difficulties: [easy, medium, hard]
+max_steps: 12
+
+tasks:
+  - id: metric_mismatch
+    difficulty: easy
+    description: >
+      Detect whether a paper result uses a different metric than the implementation artifacts.
+    grader: graders.metric_mismatch_grader
+
+  - id: split_mismatch
+    difficulty: medium
+    description: >
+      Detect paper claims that report test results while code/configs use validation or train split.
+    grader: graders.split_mismatch_grader
+
+  - id: full_audit
+    difficulty: hard
+    description: >
+      Multi-step research audit requiring inspection, methodology checks, evidence, and calibrated verdict.
+    grader: graders.full_audit_grader

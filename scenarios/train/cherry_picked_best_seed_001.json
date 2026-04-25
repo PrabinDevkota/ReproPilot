@@ -1,0 +1,109 @@
+{
+  "scenario_id": "cherry_picked_best_seed_001",
+  "split": "train",
+  "state": {
+    "scenario_id": "cherry_picked_best_seed_001",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Our model achieves 91.2% test accuracy averaged across seeds.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.912,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Seeded Baseline",
+      "source_section_id": "sec_exp",
+      "novelty_level": 1
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report Our model achieves 91.2% test accuracy averaged across seeds..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Seeded Baseline with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_train",
+        "path": "repo/train.py",
+        "artifact_type": "code_file",
+        "content": "for seed in seeds: run(seed)",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "accuracy",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [
+      {
+        "id": "log_seeds",
+        "path": "logs/log_seeds.json",
+        "metric_name": "accuracy",
+        "values": [
+          0.862
+        ],
+        "split": "test",
+        "seed_values": {
+          "1": 0.842,
+          "2": 0.851,
+          "3": 0.912,
+          "4": 0.846
+        },
+        "inspected": false
+      }
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_METHOD_INVALID",
+    "gold_failure_type": "cherry_picked_seed",
+    "gold_evidence_source_ids": [
+      "log_seeds"
+    ],
+    "gold_required_checks": [
+      "seed_check"
+    ],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.912,
+    "notes": null
+  },
+  "tags": [
+    "cherry_picked_seed",
+    "exact"
+  ]
+}

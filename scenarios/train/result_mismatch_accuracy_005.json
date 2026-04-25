@@ -1,0 +1,106 @@
+{
+  "scenario_id": "result_mismatch_accuracy_005",
+  "split": "train",
+  "state": {
+    "scenario_id": "result_mismatch_accuracy_005",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Our method achieves 91.2% test accuracy on Dataset X.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.912,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report Our method achieves 91.2% test accuracy on Dataset X..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Standard Classifier with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_eval",
+        "path": "repo/evaluate.py",
+        "artifact_type": "code_file",
+        "content": "accuracy_score(y_true, y_pred)",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "accuracy",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [
+      {
+        "id": "log_test",
+        "path": "logs/log_test.json",
+        "metric_name": "accuracy",
+        "values": [
+          0.861
+        ],
+        "split": "test",
+        "seed_values": {},
+        "inspected": false
+      }
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_RESULT_MISMATCH",
+    "gold_failure_type": "result_mismatch",
+    "gold_evidence_source_ids": [
+      "file_eval",
+      "log_test"
+    ],
+    "gold_required_checks": [
+      "reproduction_check"
+    ],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.912,
+    "notes": null
+  },
+  "tags": [
+    "result",
+    "mismatch",
+    "result_mismatch_accuracy"
+  ]
+}

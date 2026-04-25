@@ -1,0 +1,106 @@
+{
+  "scenario_id": "metric_mismatch_auc_vs_accuracy_022",
+  "split": "train",
+  "state": {
+    "scenario_id": "metric_mismatch_auc_vs_accuracy_022",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Our method reports AUC = 0.774 on Dataset X.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "auc",
+      "claimed_metric_value": 0.774,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report Our method reports AUC = 0.774 on Dataset X..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Standard Classifier with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_eval",
+        "path": "repo/evaluate.py",
+        "artifact_type": "code_file",
+        "content": "accuracy = accuracy_score(y_true, y_pred)",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "accuracy",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [
+      {
+        "id": "log_test",
+        "path": "logs/log_test.json",
+        "metric_name": "accuracy",
+        "values": [
+          0.774
+        ],
+        "split": "test",
+        "seed_values": {},
+        "inspected": false
+      }
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_METHOD_INVALID",
+    "gold_failure_type": "metric_mismatch",
+    "gold_evidence_source_ids": [
+      "file_eval",
+      "log_test"
+    ],
+    "gold_required_checks": [
+      "metric_check"
+    ],
+    "gold_metric_name": "auc",
+    "gold_metric_value": 0.774,
+    "notes": null
+  },
+  "tags": [
+    "metric",
+    "mismatch",
+    "metric_mismatch_auc_vs_accuracy"
+  ]
+}

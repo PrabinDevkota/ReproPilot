@@ -1,0 +1,92 @@
+{
+  "scenario_id": "heldout_missing_artifact_105",
+  "split": "heldout",
+  "state": {
+    "scenario_id": "heldout_missing_artifact_105",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The checkpoint reproduces 87.2% test accuracy.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.872,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report The checkpoint reproduces 87.2% test accuracy..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Standard Classifier with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_readme",
+        "path": "repo/README.md",
+        "artifact_type": "unknown",
+        "content": "No checkpoint or log artifact is included.",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "accuracy",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_MISSING_ARTIFACTS",
+    "gold_failure_type": "missing_artifact",
+    "gold_evidence_source_ids": [
+      "file_readme"
+    ],
+    "gold_required_checks": [
+      "reproduction_check"
+    ],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.872,
+    "notes": null
+  },
+  "tags": [
+    "missing_artifact",
+    "heldout"
+  ]
+}

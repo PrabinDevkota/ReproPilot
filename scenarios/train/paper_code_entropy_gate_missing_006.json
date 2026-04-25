@@ -1,0 +1,107 @@
+{
+  "scenario_id": "paper_code_entropy_gate_missing_006",
+  "split": "train",
+  "state": {
+    "scenario_id": "paper_code_entropy_gate_missing_006",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Entropy-Gated Routing achieves 90.1% test accuracy.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.901,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Entropy-Gated Routing",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report Entropy-Gated Routing achieves 90.1% test accuracy..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Entropy-Gated Routing with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_model",
+        "path": "repo/model.py",
+        "artifact_type": "code_file",
+        "content": "class PlainMLP: pass",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "accuracy",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [
+      {
+        "id": "log_test",
+        "path": "logs/log_test.json",
+        "metric_name": "accuracy",
+        "values": [
+          0.901
+        ],
+        "split": "test",
+        "seed_values": {},
+        "inspected": false
+      }
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_METHOD_INVALID",
+    "gold_failure_type": "paper_code_mismatch",
+    "gold_evidence_source_ids": [
+      "file_model",
+      "log_test"
+    ],
+    "gold_required_checks": [
+      "paper_code_consistency_check"
+    ],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.901,
+    "notes": null
+  },
+  "tags": [
+    "paper",
+    "code",
+    "mismatch",
+    "paper_code_entropy_gate_missing"
+  ]
+}

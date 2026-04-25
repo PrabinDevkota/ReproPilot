@@ -1,0 +1,105 @@
+{
+  "scenario_id": "valid_standard_f1_009",
+  "split": "train",
+  "state": {
+    "scenario_id": "valid_standard_f1_009",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Our standard model achieves macro-F1 = 0.801 on Dataset X.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "macro-F1",
+      "claimed_metric_value": 0.801,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {
+        "id": "sec_abs",
+        "title": "Abstract",
+        "text": "We study Dataset X and report Our standard model achieves macro-F1 = 0.801 on Dataset X..",
+        "section_type": "abstract",
+        "inspected": false
+      },
+      {
+        "id": "sec_method",
+        "title": "Method",
+        "text": "The method uses Standard Classifier with calibrated scoring.",
+        "section_type": "method",
+        "inspected": false
+      },
+      {
+        "id": "sec_exp",
+        "title": "Experiments",
+        "text": "Experiments compare the full method against baselines.",
+        "section_type": "experiments",
+        "inspected": false
+      }
+    ],
+    "repo_files": [
+      {
+        "id": "file_eval",
+        "path": "repo/evaluate.py",
+        "artifact_type": "code_file",
+        "content": "macro_f1 = f1_score(y_true, y_pred, average=\"macro\")",
+        "inspected": false
+      }
+    ],
+    "configs": [
+      {
+        "id": "cfg_main",
+        "path": "configs/cfg_main.yaml",
+        "dataset": "Dataset X",
+        "split": "test",
+        "metric": "macro_f1",
+        "seed": 42,
+        "hyperparameters": {},
+        "inspected": false
+      }
+    ],
+    "logs": [
+      {
+        "id": "log_test",
+        "path": "logs/log_test.json",
+        "metric_name": "macro_f1",
+        "values": [
+          0.801
+        ],
+        "split": "test",
+        "seed_values": {},
+        "inspected": false
+      }
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 55,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "SUPPORTED_RESULT_AND_METHOD",
+    "gold_failure_type": "none",
+    "gold_evidence_source_ids": [
+      "file_eval",
+      "log_test"
+    ],
+    "gold_required_checks": [
+      "reproduction_check"
+    ],
+    "gold_metric_name": "macro-F1",
+    "gold_metric_value": 0.801,
+    "notes": null
+  },
+  "tags": [
+    "none",
+    "valid_standard_f1"
+  ]
+}
