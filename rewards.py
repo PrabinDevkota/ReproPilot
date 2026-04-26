@@ -83,11 +83,16 @@ def compute_terminal_reward(
     existing = {e.id: e for e in state.evidence}
     source_by_evidence = {e.id: e.source_id for e in state.evidence}
     fabricated = [eid for eid in action.evidence_ids if eid not in existing]
-    unobserved = [eid for eid in action.evidence_ids if eid in existing and not existing[eid].observed]
+    unobserved = [
+        eid
+        for eid in action.evidence_ids
+        if eid in existing and not existing[eid].observed
+    ]
     overlap_sources = {
         source_by_evidence[eid]
         for eid in action.evidence_ids
-        if eid in source_by_evidence and source_by_evidence[eid] in set(gold.gold_evidence_source_ids)
+        if eid in source_by_evidence
+        and source_by_evidence[eid] in set(gold.gold_evidence_source_ids)
     }
     evidence_score = 0.0
     if overlap_sources:
@@ -109,7 +114,11 @@ def compute_terminal_reward(
     reproduction_score = 0.0
     repro = [c for c in state.checks if c.check_name == CheckName.reproduction_check]
     if repro:
-        if gold.gold_failure_type in {FailureType.result_mismatch, FailureType.missing_artifact, FailureType.none}:
+        if gold.gold_failure_type in {
+            FailureType.result_mismatch,
+            FailureType.missing_artifact,
+            FailureType.none,
+        }:
             reproduction_score += 0.5
         if gold.gold_metric_value is not None:
             reproduction_score += 0.3
@@ -120,7 +129,10 @@ def compute_terminal_reward(
             novelty_score += 0.6
         elif _family(verdict) == "invalid":
             novelty_score -= 0.7
-    if gold.gold_failure_type == FailureType.missing_artifact and _family(verdict) == "inconclusive":
+    if (
+        gold.gold_failure_type == FailureType.missing_artifact
+        and _family(verdict) == "inconclusive"
+    ):
         novelty_score += 0.5
 
     efficiency = 0.1 if state.steps_remaining >= 3 and verdict is not None else 0.0
@@ -157,17 +169,6 @@ def compute_terminal_reward(
     )
 
 
-def shaping_reward(*, valid: bool, repeated: bool = False, relevant: bool = False, hidden_access: bool = False) -> RewardBreakdown:
-    score = 0.05 if valid else -0.3
-    if relevant:
-        score += 0.15
-    if repeated:
-        score -= 0.1
-    if hidden_access:
-        score -= 0.3
-    return RewardBreakdown(format_valid=0.2 if valid else -0.3, shaping=score, anti_hallucination=-1.0 if hidden_access else 0.0, final=score)
-
-
 def action_shaping_reward(
     state: AuditState,
     gold: HiddenGold,
@@ -186,7 +187,9 @@ def action_shaping_reward(
     artifacts, running deterministic checks, and using claim-specific checks.
     """
     if hidden_access:
-        return RewardBreakdown(format_valid=-0.3, shaping=-0.6, anti_hallucination=-1.0, final=-1.6)
+        return RewardBreakdown(
+            format_valid=-0.3, shaping=-0.6, anti_hallucination=-1.0, final=-1.6
+        )
     if not valid:
         return RewardBreakdown(format_valid=-0.3, shaping=-0.35, final=-0.35)
 

@@ -10,12 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from models import ActionType, AgentAction, FailureType, ValidationVerdict
-from server.repropilot_environment import ReproPilotEnvironment
+from models import ActionType, AgentAction, FailureType, ValidationVerdict  # noqa: E402
+from server.repropilot_environment import ReproPilotEnvironment  # noqa: E402
 
 
 def main() -> int:
-    env = ReproPilotEnvironment(ROOT / "scenarios" / "train" / "split_mismatch_test_vs_val_001.json")
+    env = ReproPilotEnvironment(
+        ROOT / "scenarios" / "train" / "split_mismatch_test_vs_val_001.json"
+    )
     obs = env.reset()
     print(obs.echoed_message.splitlines()[0])
     for action in [

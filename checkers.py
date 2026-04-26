@@ -45,9 +45,23 @@ def _source_texts(state: AuditState) -> list[tuple[str, str, str | None, bool]]:
     for s in state.paper_sections:
         rows.append((s.id, s.text, s.title, s.inspected))
     for c in state.configs:
-        rows.append((c.id, f"{c.dataset} {c.split} {c.metric} {c.hyperparameters}", c.path, c.inspected))
-    for l in state.logs:
-        rows.append((l.id, f"{l.metric_name} {l.values} {l.split} {l.seed_values}", l.path, l.inspected))
+        rows.append(
+            (
+                c.id,
+                f"{c.dataset} {c.split} {c.metric} {c.hyperparameters}",
+                c.path,
+                c.inspected,
+            )
+        )
+    for log in state.logs:
+        rows.append(
+            (
+                log.id,
+                f"{log.metric_name} {log.values} {log.split} {log.seed_values}",
+                log.path,
+                log.inspected,
+            )
+        )
     return rows
 
 
@@ -60,7 +74,7 @@ def _add_evidence(
     *,
     observed: bool,
 ) -> EvidenceItem:
-    eid = f"ev_{failure.value}_{source_id}_{len(state.evidence)+1}"
+    eid = f"ev_{failure.value}_{source_id}_{len(state.evidence) + 1}"
     item = EvidenceItem(
         id=eid,
         source_id=source_id,
@@ -120,8 +134,24 @@ def metric_check(state: AuditState) -> ValidationCheck:
             FailureType.metric_mismatch,
             observed=detected[3] or True,
         )
-        return _record(state, CheckName.metric_check, CheckStatus.failed, FailureType.metric_mismatch, Severity.high, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.metric_check, CheckStatus.passed, FailureType.none, Severity.low, "Metric check passed or no conflicting metric found.", [])
+        return _record(
+            state,
+            CheckName.metric_check,
+            CheckStatus.failed,
+            FailureType.metric_mismatch,
+            Severity.high,
+            ev.quote_or_finding,
+            [ev.id],
+        )
+    return _record(
+        state,
+        CheckName.metric_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Metric check passed or no conflicting metric found.",
+        [],
+    )
 
 
 def split_check(state: AuditState) -> ValidationCheck:
@@ -129,16 +159,44 @@ def split_check(state: AuditState) -> ValidationCheck:
     for sid, text, path, inspected in _source_texts(state):
         t = text.lower()
         observed_split = None
-        if "validation" in t or 'split="val"' in t or "split='val'" in t or "valid" in t:
+        if (
+            "validation" in t
+            or 'split="val"' in t
+            or "split='val'" in t
+            or "valid" in t
+        ):
             observed_split = "validation"
         elif "train" in t and "split" in t:
             observed_split = "train"
         elif "test" in t and "split" in t:
             observed_split = "test"
         if claim_split == "test" and observed_split in {"validation", "train"}:
-            ev = _add_evidence(state, sid, path, f"Claim uses test split but artifact uses {observed_split}.", FailureType.split_mismatch, observed=inspected or True)
-            return _record(state, CheckName.split_check, CheckStatus.failed, FailureType.split_mismatch, Severity.critical, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.split_check, CheckStatus.passed, FailureType.none, Severity.low, "Split check passed or no conflicting split found.", [])
+            ev = _add_evidence(
+                state,
+                sid,
+                path,
+                f"Claim uses test split but artifact uses {observed_split}.",
+                FailureType.split_mismatch,
+                observed=inspected or True,
+            )
+            return _record(
+                state,
+                CheckName.split_check,
+                CheckStatus.failed,
+                FailureType.split_mismatch,
+                Severity.critical,
+                ev.quote_or_finding,
+                [ev.id],
+            )
+    return _record(
+        state,
+        CheckName.split_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Split check passed or no conflicting split found.",
+        [],
+    )
 
 
 def leakage_check(state: AuditState) -> ValidationCheck:
@@ -159,15 +217,46 @@ def leakage_check(state: AuditState) -> ValidationCheck:
         low = text.lower().replace(" ", "")
         for pat in patterns:
             if pat.lower().replace(" ", "") in low:
-                ev = _add_evidence(state, sid, path, f"Potential train/test leakage pattern found: {pat}.", FailureType.data_leakage, observed=inspected or True)
-                return _record(state, CheckName.leakage_check, CheckStatus.failed, FailureType.data_leakage, Severity.critical, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.leakage_check, CheckStatus.passed, FailureType.none, Severity.low, "Leakage check passed.", [])
+                ev = _add_evidence(
+                    state,
+                    sid,
+                    path,
+                    f"Potential train/test leakage pattern found: {pat}.",
+                    FailureType.data_leakage,
+                    observed=inspected or True,
+                )
+                return _record(
+                    state,
+                    CheckName.leakage_check,
+                    CheckStatus.failed,
+                    FailureType.data_leakage,
+                    Severity.critical,
+                    ev.quote_or_finding,
+                    [ev.id],
+                )
+    return _record(
+        state,
+        CheckName.leakage_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Leakage check passed.",
+        [],
+    )
 
 
 def seed_check(state: AuditState, tolerance: float = 0.003) -> ValidationCheck:
     claimed = state.target_claim.claimed_metric_value
     if claimed is None:
-        return _record(state, CheckName.seed_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "No claimed metric value to compare against seeds.", [])
+        return _record(
+            state,
+            CheckName.seed_check,
+            CheckStatus.inconclusive,
+            FailureType.unknown,
+            Severity.low,
+            "No claimed metric value to compare against seeds.",
+            [],
+        )
     for log in state.logs:
         if len(log.seed_values) < 2:
             continue
@@ -175,43 +264,162 @@ def seed_check(state: AuditState, tolerance: float = 0.003) -> ValidationCheck:
         best = max(values)
         mean = sum(values) / len(values)
         if abs(claimed - best) <= tolerance and abs(claimed - mean) > tolerance:
-            ev = _add_evidence(state, log.id, log.path, f"Claimed value {claimed:.3f} matches best seed {best:.3f}, while seed mean is {mean:.3f}.", FailureType.cherry_picked_seed, observed=log.inspected or True)
-            return _record(state, CheckName.seed_check, CheckStatus.failed, FailureType.cherry_picked_seed, Severity.high, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.seed_check, CheckStatus.passed, FailureType.none, Severity.low, "Seed check passed or insufficient seed spread.", [])
+            ev = _add_evidence(
+                state,
+                log.id,
+                log.path,
+                f"Claimed value {claimed:.3f} matches best seed {best:.3f}, while seed mean is {mean:.3f}.",
+                FailureType.cherry_picked_seed,
+                observed=log.inspected or True,
+            )
+            return _record(
+                state,
+                CheckName.seed_check,
+                CheckStatus.failed,
+                FailureType.cherry_picked_seed,
+                Severity.high,
+                ev.quote_or_finding,
+                [ev.id],
+            )
+    return _record(
+        state,
+        CheckName.seed_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Seed check passed or insufficient seed spread.",
+        [],
+    )
 
 
 def ablation_check(state: AuditState) -> ValidationCheck:
     text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
-    if "ablation" in text and ("changed lr and removed module" in text or "dropout,lr,batch_size" in text or "multiple changes" in text):
-        ev = _add_evidence(state, state.target_claim.source_section_id or state.target_claim.id, None, "Ablation changes multiple factors at once.", FailureType.invalid_ablation, observed=True)
-        return _record(state, CheckName.ablation_check, CheckStatus.failed, FailureType.invalid_ablation, Severity.high, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.ablation_check, CheckStatus.passed, FailureType.none, Severity.low, "Ablation check passed or no ablation claim found.", [])
+    if "ablation" in text and (
+        "changed lr and removed module" in text
+        or "dropout,lr,batch_size" in text
+        or "multiple changes" in text
+    ):
+        ev = _add_evidence(
+            state,
+            state.target_claim.source_section_id or state.target_claim.id,
+            None,
+            "Ablation changes multiple factors at once.",
+            FailureType.invalid_ablation,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.ablation_check,
+            CheckStatus.failed,
+            FailureType.invalid_ablation,
+            Severity.high,
+            ev.quote_or_finding,
+            [ev.id],
+        )
+    return _record(
+        state,
+        CheckName.ablation_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Ablation check passed or no ablation claim found.",
+        [],
+    )
 
 
 def paper_code_consistency_check(state: AuditState) -> ValidationCheck:
     method = (state.target_claim.claimed_method or "").lower()
     tokens = [t for t in re.split(r"[^a-z0-9]+", method) if len(t) >= 4]
-    code = " ".join(f.content.lower() for f in state.repo_files if f.artifact_type.value in {"code_file", "script"})
+    code = " ".join(
+        f.content.lower()
+        for f in state.repo_files
+        if f.artifact_type.value in {"code_file", "script"}
+    )
     missing = [t for t in tokens if t not in code]
     if tokens and len(missing) >= max(1, len(tokens) // 2):
-        ev = _add_evidence(state, "repo", None, f"Method tokens missing from code: {', '.join(missing)}.", FailureType.paper_code_mismatch, observed=True)
-        return _record(state, CheckName.paper_code_consistency_check, CheckStatus.failed, FailureType.paper_code_mismatch, Severity.medium, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.paper_code_consistency_check, CheckStatus.passed, FailureType.none, Severity.low, "Paper/code consistency check passed.", [])
+        ev = _add_evidence(
+            state,
+            "repo",
+            None,
+            f"Method tokens missing from code: {', '.join(missing)}.",
+            FailureType.paper_code_mismatch,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.paper_code_consistency_check,
+            CheckStatus.failed,
+            FailureType.paper_code_mismatch,
+            Severity.medium,
+            ev.quote_or_finding,
+            [ev.id],
+        )
+    return _record(
+        state,
+        CheckName.paper_code_consistency_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Paper/code consistency check passed.",
+        [],
+    )
 
 
 def reproduction_check(state: AuditState, tolerance: float = 0.005) -> ValidationCheck:
     claim_metric = _norm_metric(state.target_claim.claimed_metric_name)
     claimed = state.target_claim.claimed_metric_value
-    matching_logs = [l for l in state.logs if _norm_metric(l.metric_name) == claim_metric and l.values]
+    matching_logs = [
+        log
+        for log in state.logs
+        if _norm_metric(log.metric_name) == claim_metric and log.values
+    ]
     if not matching_logs:
-        ev = _add_evidence(state, "artifacts", None, "No matching logs or result artifacts for reproduction check.", FailureType.missing_artifact, observed=True)
-        return _record(state, CheckName.reproduction_check, CheckStatus.inconclusive, FailureType.missing_artifact, Severity.medium, ev.quote_or_finding, [ev.id])
+        ev = _add_evidence(
+            state,
+            "artifacts",
+            None,
+            "No matching logs or result artifacts for reproduction check.",
+            FailureType.missing_artifact,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.reproduction_check,
+            CheckStatus.inconclusive,
+            FailureType.missing_artifact,
+            Severity.medium,
+            ev.quote_or_finding,
+            [ev.id],
+        )
     if claimed is not None:
         observed = matching_logs[0].values[-1]
         if abs(claimed - observed) > tolerance:
-            ev = _add_evidence(state, matching_logs[0].id, matching_logs[0].path, f"Claimed {claimed:.3f}, but reproduced/logged value is {observed:.3f}.", FailureType.result_mismatch, observed=matching_logs[0].inspected or True)
-            return _record(state, CheckName.reproduction_check, CheckStatus.failed, FailureType.result_mismatch, Severity.high, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.reproduction_check, CheckStatus.passed, FailureType.none, Severity.low, "Reproduction check passed within tolerance.", [])
+            ev = _add_evidence(
+                state,
+                matching_logs[0].id,
+                matching_logs[0].path,
+                f"Claimed {claimed:.3f}, but reproduced/logged value is {observed:.3f}.",
+                FailureType.result_mismatch,
+                observed=matching_logs[0].inspected or True,
+            )
+            return _record(
+                state,
+                CheckName.reproduction_check,
+                CheckStatus.failed,
+                FailureType.result_mismatch,
+                Severity.high,
+                ev.quote_or_finding,
+                [ev.id],
+            )
+    return _record(
+        state,
+        CheckName.reproduction_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Reproduction check passed within tolerance.",
+        [],
+    )
 
 
 def dataset_provenance_check(state: AuditState) -> ValidationCheck:
@@ -227,36 +435,151 @@ def dataset_provenance_check(state: AuditState) -> ValidationCheck:
     ]
     for pat in risky:
         if pat in text:
-            ev = _add_evidence(state, "dataset", None, f"Dataset provenance concern found: {pat}.", FailureType.dataset_provenance_issue, observed=True)
-            return _record(state, CheckName.dataset_provenance_check, CheckStatus.failed, FailureType.dataset_provenance_issue, Severity.medium, ev.quote_or_finding, [ev.id])
-    if state.target_claim.claimed_dataset and not any((state.target_claim.claimed_dataset or "").lower() in t.lower() for _, t, _, _ in _source_texts(state)):
-        ev = _add_evidence(state, "dataset", None, "Claimed dataset is not clearly referenced by inspected artifacts.", FailureType.dataset_provenance_issue, observed=True)
-        return _record(state, CheckName.dataset_provenance_check, CheckStatus.inconclusive, FailureType.dataset_provenance_issue, Severity.medium, ev.quote_or_finding, [ev.id])
-    return _record(state, CheckName.dataset_provenance_check, CheckStatus.passed, FailureType.none, Severity.low, "Dataset provenance check passed or no provenance issue found.", [])
+            ev = _add_evidence(
+                state,
+                "dataset",
+                None,
+                f"Dataset provenance concern found: {pat}.",
+                FailureType.dataset_provenance_issue,
+                observed=True,
+            )
+            return _record(
+                state,
+                CheckName.dataset_provenance_check,
+                CheckStatus.failed,
+                FailureType.dataset_provenance_issue,
+                Severity.medium,
+                ev.quote_or_finding,
+                [ev.id],
+            )
+    if state.target_claim.claimed_dataset and not any(
+        (state.target_claim.claimed_dataset or "").lower() in t.lower()
+        for _, t, _, _ in _source_texts(state)
+    ):
+        ev = _add_evidence(
+            state,
+            "dataset",
+            None,
+            "Claimed dataset is not clearly referenced by inspected artifacts.",
+            FailureType.dataset_provenance_issue,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.dataset_provenance_check,
+            CheckStatus.inconclusive,
+            FailureType.dataset_provenance_issue,
+            Severity.medium,
+            ev.quote_or_finding,
+            [ev.id],
+        )
+    return _record(
+        state,
+        CheckName.dataset_provenance_check,
+        CheckStatus.passed,
+        FailureType.none,
+        Severity.low,
+        "Dataset provenance check passed or no provenance issue found.",
+        [],
+    )
 
 
 def hyperparameter_search_check(state: AuditState) -> ValidationCheck:
     text = " ".join(t for _, t, _, _ in _source_texts(state)).lower().replace(" ", "")
-    risky = ["tunedontest", "testsetgridsearch", "selectbestontest", "sweep_test", "best_of_"]
+    risky = [
+        "tunedontest",
+        "testsetgridsearch",
+        "selectbestontest",
+        "sweep_test",
+        "best_of_",
+    ]
     for pat in risky:
         if pat in text:
-            ev = _add_evidence(state, "hparams", None, f"Hyperparameter search may use held-out/test feedback: {pat}.", FailureType.hyperparameter_search_bias, observed=True)
-            return _record(state, CheckName.hyperparameter_search_check, CheckStatus.failed, FailureType.hyperparameter_search_bias, Severity.high, ev.quote_or_finding, [ev.id])
+            ev = _add_evidence(
+                state,
+                "hparams",
+                None,
+                f"Hyperparameter search may use held-out/test feedback: {pat}.",
+                FailureType.hyperparameter_search_bias,
+                observed=True,
+            )
+            return _record(
+                state,
+                CheckName.hyperparameter_search_check,
+                CheckStatus.failed,
+                FailureType.hyperparameter_search_bias,
+                Severity.high,
+                ev.quote_or_finding,
+                [ev.id],
+            )
     if any(c.hyperparameters for c in state.configs):
-        return _record(state, CheckName.hyperparameter_search_check, CheckStatus.passed, FailureType.none, Severity.low, "Hyperparameter search check passed for visible config.", [])
-    return _record(state, CheckName.hyperparameter_search_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "No hyperparameter search evidence visible.", [])
+        return _record(
+            state,
+            CheckName.hyperparameter_search_check,
+            CheckStatus.passed,
+            FailureType.none,
+            Severity.low,
+            "Hyperparameter search check passed for visible config.",
+            [],
+        )
+    return _record(
+        state,
+        CheckName.hyperparameter_search_check,
+        CheckStatus.inconclusive,
+        FailureType.unknown,
+        Severity.low,
+        "No hyperparameter search evidence visible.",
+        [],
+    )
 
 
 def baseline_fairness_check(state: AuditState) -> ValidationCheck:
     text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
-    risky = ["weaker baseline", "baseline without tuning", "baseline default settings", "no baseline", "unfair baseline"]
+    risky = [
+        "weaker baseline",
+        "baseline without tuning",
+        "baseline default settings",
+        "no baseline",
+        "unfair baseline",
+    ]
     for pat in risky:
         if pat in text:
-            ev = _add_evidence(state, "baseline", None, f"Baseline fairness concern found: {pat}.", FailureType.baseline_unfairness, observed=True)
-            return _record(state, CheckName.baseline_fairness_check, CheckStatus.failed, FailureType.baseline_unfairness, Severity.medium, ev.quote_or_finding, [ev.id])
+            ev = _add_evidence(
+                state,
+                "baseline",
+                None,
+                f"Baseline fairness concern found: {pat}.",
+                FailureType.baseline_unfairness,
+                observed=True,
+            )
+            return _record(
+                state,
+                CheckName.baseline_fairness_check,
+                CheckStatus.failed,
+                FailureType.baseline_unfairness,
+                Severity.medium,
+                ev.quote_or_finding,
+                [ev.id],
+            )
     if "baseline" in text or "compare" in text:
-        return _record(state, CheckName.baseline_fairness_check, CheckStatus.passed, FailureType.none, Severity.low, "Baseline fairness check passed for visible comparisons.", [])
-    return _record(state, CheckName.baseline_fairness_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "No baseline comparison evidence visible.", [])
+        return _record(
+            state,
+            CheckName.baseline_fairness_check,
+            CheckStatus.passed,
+            FailureType.none,
+            Severity.low,
+            "Baseline fairness check passed for visible comparisons.",
+            [],
+        )
+    return _record(
+        state,
+        CheckName.baseline_fairness_check,
+        CheckStatus.inconclusive,
+        FailureType.unknown,
+        Severity.low,
+        "No baseline comparison evidence visible.",
+        [],
+    )
 
 
 def statistical_significance_check(state: AuditState) -> ValidationCheck:
@@ -265,20 +588,86 @@ def statistical_significance_check(state: AuditState) -> ValidationCheck:
         values.extend(log.values)
         values.extend(log.seed_values.values())
     text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
-    if len(values) <= 1 and any(token in text for token in ["significant", "sota", "outperforms", "improves"]):
-        ev = _add_evidence(state, "statistics", None, "Strong comparative claim has only one visible run/value.", FailureType.statistical_underpower, observed=True)
-        return _record(state, CheckName.statistical_significance_check, CheckStatus.inconclusive, FailureType.statistical_underpower, Severity.medium, ev.quote_or_finding, [ev.id])
+    if len(values) <= 1 and any(
+        token in text for token in ["significant", "sota", "outperforms", "improves"]
+    ):
+        ev = _add_evidence(
+            state,
+            "statistics",
+            None,
+            "Strong comparative claim has only one visible run/value.",
+            FailureType.statistical_underpower,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.statistical_significance_check,
+            CheckStatus.inconclusive,
+            FailureType.statistical_underpower,
+            Severity.medium,
+            ev.quote_or_finding,
+            [ev.id],
+        )
     if len(values) >= 3:
-        return _record(state, CheckName.statistical_significance_check, CheckStatus.passed, FailureType.none, Severity.low, "Multiple values/seeds visible for statistical sanity check.", [])
-    return _record(state, CheckName.statistical_significance_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "Insufficient visible runs for statistical significance check.", [])
+        return _record(
+            state,
+            CheckName.statistical_significance_check,
+            CheckStatus.passed,
+            FailureType.none,
+            Severity.low,
+            "Multiple values/seeds visible for statistical sanity check.",
+            [],
+        )
+    return _record(
+        state,
+        CheckName.statistical_significance_check,
+        CheckStatus.inconclusive,
+        FailureType.unknown,
+        Severity.low,
+        "Insufficient visible runs for statistical significance check.",
+        [],
+    )
 
 
 def implementation_completeness_check(state: AuditState) -> ValidationCheck:
     method = (state.target_claim.claimed_method or "").lower()
     code = " ".join(f.content.lower() for f in state.repo_files)
-    if method and "stub" in code or "todo" in code or "not implemented" in code:
-        ev = _add_evidence(state, "implementation", None, "Implementation appears incomplete or stubbed.", FailureType.incomplete_implementation, observed=True)
-        return _record(state, CheckName.implementation_completeness_check, CheckStatus.failed, FailureType.incomplete_implementation, Severity.high, ev.quote_or_finding, [ev.id])
-    if method and any(tok in code for tok in re.split(r"[^a-z0-9]+", method) if len(tok) >= 5):
-        return _record(state, CheckName.implementation_completeness_check, CheckStatus.passed, FailureType.none, Severity.low, "Implementation completeness check found method tokens in code.", [])
-    return _record(state, CheckName.implementation_completeness_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "Implementation completeness is inconclusive from visible code.", [])
+    if method and ("stub" in code or "todo" in code or "not implemented" in code):
+        ev = _add_evidence(
+            state,
+            "implementation",
+            None,
+            "Implementation appears incomplete or stubbed.",
+            FailureType.incomplete_implementation,
+            observed=True,
+        )
+        return _record(
+            state,
+            CheckName.implementation_completeness_check,
+            CheckStatus.failed,
+            FailureType.incomplete_implementation,
+            Severity.high,
+            ev.quote_or_finding,
+            [ev.id],
+        )
+    if method and any(
+        tok in code for tok in re.split(r"[^a-z0-9]+", method) if len(tok) >= 5
+    ):
+        return _record(
+            state,
+            CheckName.implementation_completeness_check,
+            CheckStatus.passed,
+            FailureType.none,
+            Severity.low,
+            "Implementation completeness check found method tokens in code.",
+            [],
+        )
+    return _record(
+        state,
+        CheckName.implementation_completeness_check,
+        CheckStatus.inconclusive,
+        FailureType.unknown,
+        Severity.low,
+        "Implementation completeness is inconclusive from visible code.",
+        [],
+    )

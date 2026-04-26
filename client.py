@@ -23,7 +23,9 @@ class ReproPilotEnv(EnvClient[AgentAction, ReproPilotObservation, State]):
     def _step_payload(self, action: AgentAction) -> dict[str, Any]:
         return action.model_dump(mode="json", exclude_none=True)
 
-    def _parse_result(self, payload: dict[str, Any]) -> StepResult[ReproPilotObservation]:
+    def _parse_result(
+        self, payload: dict[str, Any]
+    ) -> StepResult[ReproPilotObservation]:
         obs_data = payload.get("observation", {})
         observation = ReproPilotObservation(
             echoed_message=obs_data.get("echoed_message", ""),
@@ -32,7 +34,14 @@ class ReproPilotEnv(EnvClient[AgentAction, ReproPilotObservation, State]):
             reward=payload.get("reward"),
             metadata=obs_data.get("metadata", {}),
         )
-        return StepResult(observation=observation, reward=payload.get("reward"), done=payload.get("done", False))
+        return StepResult(
+            observation=observation,
+            reward=payload.get("reward"),
+            done=payload.get("done", False),
+        )
 
     def _parse_state(self, payload: dict[str, Any]) -> State:
-        return State(episode_id=payload.get("episode_id"), step_count=payload.get("step_count", 0))
+        return State(
+            episode_id=payload.get("episode_id"),
+            step_count=payload.get("step_count", 0),
+        )

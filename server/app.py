@@ -84,9 +84,9 @@ def _patch_openapi_repropilot_examples(schema: dict) -> None:
     step_ex = {"observation": obs, "reward": -0.42, "done": False}
     for path, example in (("/reset", reset_ex), ("/step", step_ex)):
         try:
-            cell = (
-                schema["paths"][path]["post"]["responses"]["200"]["content"]["application/json"]
-            )
+            cell = schema["paths"][path]["post"]["responses"]["200"]["content"][
+                "application/json"
+            ]
             if isinstance(cell, dict):
                 cell["example"] = example
         except KeyError:
@@ -160,5 +160,5 @@ def main() -> None:
     uvicorn.run(app, host=args.host, port=args.port)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

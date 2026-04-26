@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from baselines.random_policy import random_action
-from baselines.smart_policy import smart_action
-from evaluation.evaluate_policy import evaluate, write_report
-from evaluation.plots import generate_plots
+from baselines.random_policy import random_action  # noqa: E402
+from baselines.smart_policy import smart_action  # noqa: E402
+from evaluation.evaluate_policy import evaluate, write_report  # noqa: E402
+from evaluation.plots import generate_plots  # noqa: E402
 
 
 def main() -> int:

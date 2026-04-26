@@ -23,7 +23,9 @@ def _is_pydantic_model_class(cls: object) -> bool:
 
 
 ActionBase = _OpenEnvAction if _is_pydantic_model_class(_OpenEnvAction) else BaseModel
-ObservationBase = _OpenEnvObservation if _is_pydantic_model_class(_OpenEnvObservation) else BaseModel
+ObservationBase = (
+    _OpenEnvObservation if _is_pydantic_model_class(_OpenEnvObservation) else BaseModel
+)
 
 
 class ValidationVerdict(StrEnum):

@@ -29,9 +29,9 @@ def build_briefing(state: AuditState) -> str:
         for c in state.configs
     ]
     log_lines = [
-        f"- {l.id}: {l.path} metric={l.metric_name or '?'} values={len(l.values)} "
-        f"split={l.split or '?'} seeds={len(l.seed_values)} inspected={l.inspected}"
-        for l in state.logs
+        f"- {log.id}: {log.path} metric={log.metric_name or '?'} values={len(log.values)} "
+        f"split={log.split or '?'} seeds={len(log.seed_values)} inspected={log.inspected}"
+        for log in state.logs
     ]
     check_lines = [
         f"- {c.id}: {c.check_name} status={c.status} issue_found={c.issue_found} "

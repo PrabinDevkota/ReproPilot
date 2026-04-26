@@ -13,7 +13,9 @@ except ImportError:
     from server.repropilot_environment import ReproPilotEnvironment
 
 
-def apply_action(env: ReproPilotEnvironment, action: AgentAction) -> ReproPilotObservation:
+def apply_action(
+    env: ReproPilotEnvironment, action: AgentAction
+) -> ReproPilotObservation:
     return env.step(action)
 
 
