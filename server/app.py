@@ -29,18 +29,11 @@ Usage:
 """
 
 try:
-    import os
-    from pathlib import Path
-
     import openenv.core.env_server.http_server as _openenv_http
 except Exception as e:  # pragma: no cover
     raise ImportError(
         "openenv is required for the web interface. Install dependencies with '\n    uv sync\n'"
     ) from e
-
-_readme_path = Path(__file__).resolve().parents[1] / "README.md"
-if _readme_path.exists():
-    os.environ.setdefault("ENV_README_PATH", str(_readme_path))
 
 # OpenEnv's serialize_observation drops `metadata` from the JSON body; ReproPilot
 # trainers and live tests rely on step_ok / ids inside observation.metadata.
