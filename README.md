@@ -30,7 +30,7 @@ The goal is not to prove scientific truth from scratch. The goal is to train age
 
 **Why it matters:** Reviewers, research engineers, ML platform teams, and anyone evaluating AI-generated research claims need agents that can audit evidence instead of writing plausible but unverified summaries.
 
-Try it through the Hugging Face Space once the final URL is added: [Hugging Face Space](TODO_ADD_HF_SPACE_URL).
+Try it through the [Hugging Face Space](https://huggingface.co/spaces/riwaj43adz/repro).
 
 ## Why this matters
 
@@ -68,7 +68,7 @@ ReproPilot follows the OpenEnv reset / step / state pattern:
 
 Hugging Face Space deployment:
 
-- [Hugging Face Space](TODO_ADD_HF_SPACE_URL)
+- [Hugging Face Space](https://huggingface.co/spaces/riwaj43adz/repro)
 
 ## Current Scale
 
@@ -204,9 +204,9 @@ uv run python scripts/http_endpoint_smoke.py --url TODO_ADD_HF_SPACE_URL
 
 | Item | Link or path |
 | --- | --- |
-| Hugging Face Space | TODO_ADD_HF_SPACE_URL |
+| Hugging Face Space | [https://huggingface.co/spaces/riwaj43adz/repro](https://huggingface.co/spaces/riwaj43adz/repro) |
 | Training notebook / Colab | [notebooks/trainer.ipynb](notebooks/trainer.ipynb) |
-| Mini-blog / video / slides | TODO_ADD_WRITEUP_OR_VIDEO_LINK |
+| Mini-blog / video / slides | [Blog.md](Blog.md) |
 | OpenEnv manifest | [openenv.yaml](openenv.yaml) |
 
 ## Engineering Notes
