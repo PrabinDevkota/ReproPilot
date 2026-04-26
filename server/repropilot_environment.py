@@ -23,12 +23,17 @@ try:
     from ..briefing import build_briefing
     from ..checkers import (
         ablation_check,
+        baseline_fairness_check,
+        dataset_provenance_check,
+        hyperparameter_search_check,
+        implementation_completeness_check,
         leakage_check,
         metric_check,
         paper_code_consistency_check,
         reproduction_check,
         seed_check,
         split_check,
+        statistical_significance_check,
     )
     from ..models import (
         ActionType,
@@ -49,12 +54,17 @@ except ImportError:
     from briefing import build_briefing
     from checkers import (
         ablation_check,
+        baseline_fairness_check,
+        dataset_provenance_check,
+        hyperparameter_search_check,
+        implementation_completeness_check,
         leakage_check,
         metric_check,
         paper_code_consistency_check,
         reproduction_check,
         seed_check,
         split_check,
+        statistical_significance_check,
     )
     from models import (
         ActionType,
@@ -170,6 +180,12 @@ class ReproPilotEnvironment(Environment):
             valid, relevant = self._search(action.target_id or action.explanation or "")
         elif at == ActionType.compare_claim_to_artifacts:
             valid, relevant = self._compare_claim_to_artifacts()
+        elif at == ActionType.audit_experiment_design:
+            valid, relevant = self._audit_experiment_design()
+        elif at == ActionType.rank_evidence:
+            valid, relevant = self._rank_evidence()
+        elif at == ActionType.plan_next_check:
+            valid, relevant = self._plan_next_check()
         elif at == ActionType.run_metric_check:
             metric_check(st)
             relevant = CheckName.metric_check in self.hidden_gold.gold_required_checks
@@ -191,6 +207,21 @@ class ReproPilotEnvironment(Environment):
         elif at == ActionType.run_reproduction_check:
             reproduction_check(st)
             relevant = CheckName.reproduction_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.run_dataset_provenance_check:
+            dataset_provenance_check(st)
+            relevant = CheckName.dataset_provenance_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.run_hyperparameter_search_check:
+            hyperparameter_search_check(st)
+            relevant = CheckName.hyperparameter_search_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.run_baseline_fairness_check:
+            baseline_fairness_check(st)
+            relevant = CheckName.baseline_fairness_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.run_statistical_significance_check:
+            statistical_significance_check(st)
+            relevant = CheckName.statistical_significance_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.run_implementation_completeness_check:
+            implementation_completeness_check(st)
+            relevant = CheckName.implementation_completeness_check in self.hidden_gold.gold_required_checks
         elif at == ActionType.synthesize_findings:
             valid, relevant = self._synthesize_findings()
         elif at == ActionType.mark_inconclusive:
@@ -322,6 +353,47 @@ class ReproPilotEnvironment(Environment):
         st.last_action_result = "Compared claim to artifacts using: " + ", ".join(ran)
         return True, relevant
 
+    def _audit_experiment_design(self) -> tuple[bool, bool]:
+        st = self.audit_state
+        before = len(st.checks)
+        split_check(st)
+        leakage_check(st)
+        hyperparameter_search_check(st)
+        baseline_fairness_check(st)
+        statistical_significance_check(st)
+        new_checks = st.checks[before:]
+        relevant = bool(set(self.hidden_gold.gold_required_checks) & {c.check_name for c in new_checks})
+        st.last_action_result = "Audited experiment design across split, leakage, hyperparameter search, baseline fairness, and statistical evidence."
+        return True, relevant
+
+    def _rank_evidence(self) -> tuple[bool, bool]:
+        st = self.audit_state
+        observed = [e for e in st.evidence if e.observed]
+        if not observed:
+            st.last_action_result = "No observed evidence to rank yet."
+            return True, False
+        ranked = sorted(
+            observed,
+            key=lambda e: (
+                e.supports_failure_type == self.hidden_gold.gold_failure_type,
+                e.source_id in set(self.hidden_gold.gold_evidence_source_ids),
+            ),
+            reverse=True,
+        )
+        st.last_action_result = "Top evidence: " + ", ".join(e.id for e in ranked[:5])
+        return True, any(e.source_id in set(self.hidden_gold.gold_evidence_source_ids) for e in ranked[:3])
+
+    def _plan_next_check(self) -> tuple[bool, bool]:
+        st = self.audit_state
+        ran = {c.check_name for c in st.checks}
+        missing_required = [c for c in self.hidden_gold.gold_required_checks if c not in ran]
+        if missing_required:
+            st.last_action_result = "Next high-value checks: " + ", ".join(c.value for c in missing_required[:4])
+            return True, True
+        suggestions = self._suggested_action_families(st)
+        st.last_action_result = "Next audit focus: " + (", ".join(suggestions[:4]) if suggestions else "submit evidence-backed verdict")
+        return True, bool(suggestions)
+
     def _synthesize_findings(self) -> tuple[bool, bool]:
         st = self.audit_state
         failed = [c for c in st.checks if c.issue_found]
@@ -389,6 +461,8 @@ class ReproPilotEnvironment(Environment):
             suggestions.append("reproduction_or_result_check")
         if st.target_claim.claimed_method:
             suggestions.append("paper_code_consistency")
+        suggestions.append("experiment_design")
+        suggestions.append("evidence_ranking")
         return suggestions
 
     def _observation(self, reward: float, done: bool) -> ReproPilotObservation:

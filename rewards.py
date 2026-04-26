@@ -217,6 +217,11 @@ def action_shaping_reward(
         ActionType.run_ablation_check,
         ActionType.run_paper_code_consistency_check,
         ActionType.run_reproduction_check,
+        ActionType.run_dataset_provenance_check,
+        ActionType.run_hyperparameter_search_check,
+        ActionType.run_baseline_fairness_check,
+        ActionType.run_statistical_significance_check,
+        ActionType.run_implementation_completeness_check,
     }:
         score = 0.45 if relevant else 0.18
         if action.target_id in {None, ""}:
@@ -225,6 +230,12 @@ def action_shaping_reward(
         score = 0.20 if relevant else -0.05
     elif at == ActionType.synthesize_findings:
         score = 0.25 if relevant else -0.02
+    elif at == ActionType.audit_experiment_design:
+        score = 0.60 if relevant else 0.30
+    elif at == ActionType.rank_evidence:
+        score = 0.32 if relevant else 0.05
+    elif at == ActionType.plan_next_check:
+        score = 0.24 if relevant else 0.08
     elif at == ActionType.submit_verdict:
         score = -0.10
 

@@ -212,3 +212,73 @@ def reproduction_check(state: AuditState, tolerance: float = 0.005) -> Validatio
             ev = _add_evidence(state, matching_logs[0].id, matching_logs[0].path, f"Claimed {claimed:.3f}, but reproduced/logged value is {observed:.3f}.", FailureType.result_mismatch, observed=matching_logs[0].inspected or True)
             return _record(state, CheckName.reproduction_check, CheckStatus.failed, FailureType.result_mismatch, Severity.high, ev.quote_or_finding, [ev.id])
     return _record(state, CheckName.reproduction_check, CheckStatus.passed, FailureType.none, Severity.low, "Reproduction check passed within tolerance.", [])
+
+
+def dataset_provenance_check(state: AuditState) -> ValidationCheck:
+    text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
+    risky = [
+        "unknown source",
+        "private test",
+        "unreleased dataset",
+        "manual download",
+        "no dataset card",
+        "dataset not provided",
+        "cannot redistribute",
+    ]
+    for pat in risky:
+        if pat in text:
+            ev = _add_evidence(state, "dataset", None, f"Dataset provenance concern found: {pat}.", FailureType.dataset_provenance_issue, observed=True)
+            return _record(state, CheckName.dataset_provenance_check, CheckStatus.failed, FailureType.dataset_provenance_issue, Severity.medium, ev.quote_or_finding, [ev.id])
+    if state.target_claim.claimed_dataset and not any((state.target_claim.claimed_dataset or "").lower() in t.lower() for _, t, _, _ in _source_texts(state)):
+        ev = _add_evidence(state, "dataset", None, "Claimed dataset is not clearly referenced by inspected artifacts.", FailureType.dataset_provenance_issue, observed=True)
+        return _record(state, CheckName.dataset_provenance_check, CheckStatus.inconclusive, FailureType.dataset_provenance_issue, Severity.medium, ev.quote_or_finding, [ev.id])
+    return _record(state, CheckName.dataset_provenance_check, CheckStatus.passed, FailureType.none, Severity.low, "Dataset provenance check passed or no provenance issue found.", [])
+
+
+def hyperparameter_search_check(state: AuditState) -> ValidationCheck:
+    text = " ".join(t for _, t, _, _ in _source_texts(state)).lower().replace(" ", "")
+    risky = ["tunedontest", "testsetgridsearch", "selectbestontest", "sweep_test", "best_of_"]
+    for pat in risky:
+        if pat in text:
+            ev = _add_evidence(state, "hparams", None, f"Hyperparameter search may use held-out/test feedback: {pat}.", FailureType.hyperparameter_search_bias, observed=True)
+            return _record(state, CheckName.hyperparameter_search_check, CheckStatus.failed, FailureType.hyperparameter_search_bias, Severity.high, ev.quote_or_finding, [ev.id])
+    if any(c.hyperparameters for c in state.configs):
+        return _record(state, CheckName.hyperparameter_search_check, CheckStatus.passed, FailureType.none, Severity.low, "Hyperparameter search check passed for visible config.", [])
+    return _record(state, CheckName.hyperparameter_search_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "No hyperparameter search evidence visible.", [])
+
+
+def baseline_fairness_check(state: AuditState) -> ValidationCheck:
+    text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
+    risky = ["weaker baseline", "baseline without tuning", "baseline default settings", "no baseline", "unfair baseline"]
+    for pat in risky:
+        if pat in text:
+            ev = _add_evidence(state, "baseline", None, f"Baseline fairness concern found: {pat}.", FailureType.baseline_unfairness, observed=True)
+            return _record(state, CheckName.baseline_fairness_check, CheckStatus.failed, FailureType.baseline_unfairness, Severity.medium, ev.quote_or_finding, [ev.id])
+    if "baseline" in text or "compare" in text:
+        return _record(state, CheckName.baseline_fairness_check, CheckStatus.passed, FailureType.none, Severity.low, "Baseline fairness check passed for visible comparisons.", [])
+    return _record(state, CheckName.baseline_fairness_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "No baseline comparison evidence visible.", [])
+
+
+def statistical_significance_check(state: AuditState) -> ValidationCheck:
+    values: list[float] = []
+    for log in state.logs:
+        values.extend(log.values)
+        values.extend(log.seed_values.values())
+    text = " ".join(t for _, t, _, _ in _source_texts(state)).lower()
+    if len(values) <= 1 and any(token in text for token in ["significant", "sota", "outperforms", "improves"]):
+        ev = _add_evidence(state, "statistics", None, "Strong comparative claim has only one visible run/value.", FailureType.statistical_underpower, observed=True)
+        return _record(state, CheckName.statistical_significance_check, CheckStatus.inconclusive, FailureType.statistical_underpower, Severity.medium, ev.quote_or_finding, [ev.id])
+    if len(values) >= 3:
+        return _record(state, CheckName.statistical_significance_check, CheckStatus.passed, FailureType.none, Severity.low, "Multiple values/seeds visible for statistical sanity check.", [])
+    return _record(state, CheckName.statistical_significance_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "Insufficient visible runs for statistical significance check.", [])
+
+
+def implementation_completeness_check(state: AuditState) -> ValidationCheck:
+    method = (state.target_claim.claimed_method or "").lower()
+    code = " ".join(f.content.lower() for f in state.repo_files)
+    if method and "stub" in code or "todo" in code or "not implemented" in code:
+        ev = _add_evidence(state, "implementation", None, "Implementation appears incomplete or stubbed.", FailureType.incomplete_implementation, observed=True)
+        return _record(state, CheckName.implementation_completeness_check, CheckStatus.failed, FailureType.incomplete_implementation, Severity.high, ev.quote_or_finding, [ev.id])
+    if method and any(tok in code for tok in re.split(r"[^a-z0-9]+", method) if len(tok) >= 5):
+        return _record(state, CheckName.implementation_completeness_check, CheckStatus.passed, FailureType.none, Severity.low, "Implementation completeness check found method tokens in code.", [])
+    return _record(state, CheckName.implementation_completeness_check, CheckStatus.inconclusive, FailureType.unknown, Severity.low, "Implementation completeness is inconclusive from visible code.", [])

@@ -119,6 +119,26 @@ def test_synthesize_findings_rewards_existing_audit_progress() -> None:
     assert "Synthesis:" in (obs.metadata.get("last_action_result") or obs.echoed_message)
 
 
+def test_audit_experiment_design_runs_methodology_checks() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    obs = env.step(AgentAction(action_type=ActionType.audit_experiment_design, target_id="claim_001"))
+    check_names = {c["check_name"] for c in obs.metadata["checks"]}
+    assert {"split_check", "leakage_check", "hyperparameter_search_check", "baseline_fairness_check", "statistical_significance_check"} <= check_names
+    assert (obs.reward or 0.0) > 0.2
+
+
+def test_plan_and_rank_evidence_actions_are_stateful() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    plan_obs = env.step(AgentAction(action_type=ActionType.plan_next_check))
+    assert "Next" in plan_obs.echoed_message
+    env.step(AgentAction(action_type=ActionType.run_split_check, target_id="claim_001"))
+    rank_obs = env.step(AgentAction(action_type=ActionType.rank_evidence))
+    assert (rank_obs.reward or 0.0) > 0
+    assert "Top evidence" in rank_obs.echoed_message
+
+
 def test_hidden_gold_access_penalized() -> None:
     env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
     env.reset()

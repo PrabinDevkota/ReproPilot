@@ -19,6 +19,11 @@ _CHECK_TO_ACTION = {
     CheckName.ablation_check.value: ActionType.run_ablation_check,
     CheckName.reproduction_check.value: ActionType.run_reproduction_check,
     CheckName.paper_code_consistency_check.value: ActionType.run_paper_code_consistency_check,
+    CheckName.dataset_provenance_check.value: ActionType.run_dataset_provenance_check,
+    CheckName.hyperparameter_search_check.value: ActionType.run_hyperparameter_search_check,
+    CheckName.baseline_fairness_check.value: ActionType.run_baseline_fairness_check,
+    CheckName.statistical_significance_check.value: ActionType.run_statistical_significance_check,
+    CheckName.implementation_completeness_check.value: ActionType.run_implementation_completeness_check,
 }
 
 
@@ -89,6 +94,11 @@ def smart_action(obs: ReproPilotObservation, rng: random.Random | None = None) -
         CheckName.ablation_check.value,
         CheckName.paper_code_consistency_check.value,
         CheckName.reproduction_check.value,
+        CheckName.dataset_provenance_check.value,
+        CheckName.hyperparameter_search_check.value,
+        CheckName.baseline_fairness_check.value,
+        CheckName.statistical_significance_check.value,
+        CheckName.implementation_completeness_check.value,
     ]
     for name in priority:
         if name not in checks_done:

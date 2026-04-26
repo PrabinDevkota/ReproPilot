@@ -31,7 +31,7 @@ def random_action(obs: ReproPilotObservation, rng: random.Random) -> AgentAction
         target_pool = list(meta.get("checkpoint_ids") or [])
     elif action_type == ActionType.search_artifacts:
         target_pool = ["accuracy", "split", "seed", "ablation", "entropy"]
-    elif action_type == ActionType.compare_claim_to_artifacts:
+    elif action_type in {ActionType.compare_claim_to_artifacts, ActionType.audit_experiment_design}:
         target_pool = [str(meta.get("claim_id") or "claim_001")]
     elif action_type == ActionType.submit_verdict:
         return AgentAction(
