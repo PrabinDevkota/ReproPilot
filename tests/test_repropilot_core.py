@@ -6,7 +6,18 @@ from pathlib import Path
 from baselines.random_policy import random_action
 from baselines.smart_policy import smart_action
 from briefing import build_briefing
-from checkers import leakage_check, metric_check, reproduction_check, seed_check, split_check
+from checkers import (
+    baseline_fairness_check,
+    dataset_provenance_check,
+    hyperparameter_search_check,
+    implementation_completeness_check,
+    leakage_check,
+    metric_check,
+    reproduction_check,
+    seed_check,
+    split_check,
+    statistical_significance_check,
+)
 from evaluation.evaluate_policy import evaluate
 from models import ActionType, AgentAction, FailureType, Scenario, ValidationVerdict
 from server.repropilot_environment import ReproPilotEnvironment
@@ -52,6 +63,34 @@ def test_checkers_detect_core_failures() -> None:
     seed_env = ReproPilotEnvironment(scenario_path("cherry_picked_best_seed_001.json"))
     seed_env.reset()
     assert seed_check(seed_env.audit_state).failure_type == FailureType.cherry_picked_seed
+
+
+def test_new_complex_scenarios_trigger_specialized_checkers() -> None:
+    cases = [
+        ("dataset_provenance_private_test_030.json", dataset_provenance_check, FailureType.dataset_provenance_issue),
+        ("hyperparameter_tuned_on_test_032.json", hyperparameter_search_check, FailureType.hyperparameter_search_bias),
+        ("baseline_default_settings_034.json", baseline_fairness_check, FailureType.baseline_unfairness),
+        ("statistical_sota_single_run_036.json", statistical_significance_check, FailureType.statistical_underpower),
+        ("implementation_stub_038.json", implementation_completeness_check, FailureType.incomplete_implementation),
+    ]
+    for file_name, checker, expected_failure in cases:
+        env = ReproPilotEnvironment(scenario_path(file_name))
+        env.reset()
+        check = checker(env.audit_state)
+        assert check.failure_type == expected_failure
+        assert check.evidence_ids
+
+
+def test_all_scenarios_load_and_accept_planning_action() -> None:
+    for split in ("train", "heldout"):
+        for path in (ROOT / "scenarios" / split).glob("*.json"):
+            scen = Scenario.model_validate_json(path.read_text(encoding="utf-8"))
+            assert scen.split == split
+            env = ReproPilotEnvironment(path)
+            obs = env.reset()
+            assert obs.metadata["scenario_id"] == scen.scenario_id
+            obs = env.step(AgentAction(action_type=ActionType.plan_next_check, target_id="claim_001"))
+            assert obs.reward is not None
 
 
 def test_valid_novel_method_not_flagged_invalid() -> None:

@@ -1,0 +1,52 @@
+{
+  "scenario_id": "statistical_improves_single_seed_037",
+  "split": "train",
+  "state": {
+    "scenario_id": "statistical_improves_single_seed_037",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The method improves over the prior system on Dataset R.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "macro_f1",
+      "claimed_metric_value": 0.774,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset R",
+      "claimed_method": "Robust Adapter",
+      "source_section_id": "sec_exp",
+      "novelty_level": 3
+    },
+    "paper_sections": [
+      {"id": "sec_exp", "title": "Experiments", "text": "The method improves over all prior systems.", "section_type": "experiments", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_eval", "path": "repo/evaluate.py", "artifact_type": "code_file", "content": "macro_f1 = evaluate_once()", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset R", "split": "test", "metric": "macro_f1", "seed": 1, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [
+      {"id": "log_one", "path": "logs/one.json", "metric_name": "macro_f1", "values": [0.774], "split": "test", "seed_values": {}, "inspected": false}
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 60,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_NEEDS_DOMAIN_REVIEW",
+    "gold_failure_type": "statistical_underpower",
+    "gold_evidence_source_ids": ["statistics"],
+    "gold_required_checks": ["statistical_significance_check"],
+    "gold_metric_name": "macro_f1",
+    "gold_metric_value": 0.774,
+    "notes": "Only one metric value supports a broad improvement claim."
+  },
+  "tags": ["statistics", "single_seed"]
+}

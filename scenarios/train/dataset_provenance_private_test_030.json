@@ -1,0 +1,50 @@
+{
+  "scenario_id": "dataset_provenance_private_test_030",
+  "split": "train",
+  "state": {
+    "scenario_id": "dataset_provenance_private_test_030",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The model achieves 88.7% test accuracy on the private Dataset Z benchmark.",
+      "claim_type": "dataset_claim",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.887,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset Z",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {"id": "sec_exp", "title": "Experiments", "text": "We report results on Dataset Z using a private test set from an unknown source.", "section_type": "experiments", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_readme", "path": "repo/README.md", "artifact_type": "unknown", "content": "Dataset Z requires manual download and cannot redistribute the private test files.", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset Z", "split": "test", "metric": "accuracy", "seed": 42, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 70,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_MISSING_ARTIFACTS",
+    "gold_failure_type": "dataset_provenance_issue",
+    "gold_evidence_source_ids": ["dataset"],
+    "gold_required_checks": ["dataset_provenance_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.887,
+    "notes": "Dataset provenance is not auditable from public artifacts."
+  },
+  "tags": ["dataset", "provenance", "private_test"]
+}

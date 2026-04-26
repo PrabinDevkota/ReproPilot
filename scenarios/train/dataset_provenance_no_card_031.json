@@ -1,0 +1,50 @@
+{
+  "scenario_id": "dataset_provenance_no_card_031",
+  "split": "train",
+  "state": {
+    "scenario_id": "dataset_provenance_no_card_031",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The released benchmark supports 82.4% macro-F1 on Dataset Omega.",
+      "claim_type": "dataset_claim",
+      "claimed_metric_name": "macro_f1",
+      "claimed_metric_value": 0.824,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset Omega",
+      "claimed_method": "Confidence Weighted Ensemble",
+      "source_section_id": "sec_data",
+      "novelty_level": 3
+    },
+    "paper_sections": [
+      {"id": "sec_data", "title": "Data", "text": "Dataset Omega is used for all experiments, but there is no dataset card and dataset not provided in the repository.", "section_type": "data", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_data", "path": "repo/data.md", "artifact_type": "dataset_card", "content": "No dataset card is available for Dataset Omega.", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset Omega", "split": "test", "metric": "macro_f1", "seed": 7, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 65,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_MISSING_ARTIFACTS",
+    "gold_failure_type": "dataset_provenance_issue",
+    "gold_evidence_source_ids": ["dataset"],
+    "gold_required_checks": ["dataset_provenance_check"],
+    "gold_metric_name": "macro_f1",
+    "gold_metric_value": 0.824,
+    "notes": "Dataset documentation is missing."
+  },
+  "tags": ["dataset", "provenance", "no_card"]
+}

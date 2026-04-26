@@ -1,0 +1,52 @@
+{
+  "scenario_id": "statistical_sota_single_run_036",
+  "split": "train",
+  "state": {
+    "scenario_id": "statistical_sota_single_run_036",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The method significantly outperforms the baseline with 91.0% accuracy.",
+      "claim_type": "metric_result",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.91,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset X",
+      "claimed_method": "Calibrated Router",
+      "source_section_id": "sec_exp",
+      "novelty_level": 3
+    },
+    "paper_sections": [
+      {"id": "sec_exp", "title": "Experiments", "text": "The method significantly outperforms the baseline and is SOTA.", "section_type": "experiments", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_eval", "path": "repo/evaluate.py", "artifact_type": "code_file", "content": "accuracy = evaluate(seed=0)", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset X", "split": "test", "metric": "accuracy", "seed": 0, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [
+      {"id": "log_one", "path": "logs/one.json", "metric_name": "accuracy", "values": [0.91], "split": "test", "seed_values": {}, "inspected": false}
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 62,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_NEEDS_DOMAIN_REVIEW",
+    "gold_failure_type": "statistical_underpower",
+    "gold_evidence_source_ids": ["statistics"],
+    "gold_required_checks": ["statistical_significance_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.91,
+    "notes": "Strong comparative claim has only one run."
+  },
+  "tags": ["statistics", "single_run"]
+}

@@ -1,0 +1,52 @@
+{
+  "scenario_id": "hyperparameter_best_of_test_033",
+  "split": "train",
+  "state": {
+    "scenario_id": "hyperparameter_best_of_test_033",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Ablated Router reaches 89.8% test accuracy with selected hyperparameters.",
+      "claim_type": "methodology_validity",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.898,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset Y",
+      "claimed_method": "Ablated Router",
+      "source_section_id": "sec_exp",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {"id": "sec_exp", "title": "Experiments", "text": "We select best on test and then report the selected run.", "section_type": "experiments", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_search", "path": "repo/search.py", "artifact_type": "script", "content": "mode = 'select best on test'; run_testset_gridsearch()", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset Y", "split": "test", "metric": "accuracy", "seed": 21, "hyperparameters": {"dropout": "best_of_32"}, "inspected": false}
+    ],
+    "logs": [
+      {"id": "log_test", "path": "logs/test.json", "metric_name": "accuracy", "values": [0.898], "split": "test", "seed_values": {}, "inspected": false}
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 78,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_METHOD_INVALID",
+    "gold_failure_type": "hyperparameter_search_bias",
+    "gold_evidence_source_ids": ["hparams"],
+    "gold_required_checks": ["hyperparameter_search_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.898,
+    "notes": "Best-of-test search invalidates the reported result."
+  },
+  "tags": ["hyperparameter", "best_of_test"]
+}

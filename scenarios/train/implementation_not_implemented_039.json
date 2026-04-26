@@ -1,0 +1,52 @@
+{
+  "scenario_id": "implementation_not_implemented_039",
+  "split": "train",
+  "state": {
+    "scenario_id": "implementation_not_implemented_039",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "Sparse Evidence Fusion is reproducible from the released code.",
+      "claim_type": "reproducibility_claim",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.869,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset S",
+      "claimed_method": "Sparse Evidence Fusion",
+      "source_section_id": "sec_method",
+      "novelty_level": 4
+    },
+    "paper_sections": [
+      {"id": "sec_method", "title": "Method", "text": "Sparse Evidence Fusion combines artifact-level votes.", "section_type": "method", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_model", "path": "repo/fusion.py", "artifact_type": "code_file", "content": "def sparse_evidence_fusion(x):\\n    raise NotImplementedError('not implemented')", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset S", "split": "test", "metric": "accuracy", "seed": 9, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [
+      {"id": "log_test", "path": "logs/test.json", "metric_name": "accuracy", "values": [0.869], "split": "test", "seed_values": {}, "inspected": false}
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 82,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "NOT_SUPPORTED_METHOD_INVALID",
+    "gold_failure_type": "incomplete_implementation",
+    "gold_evidence_source_ids": ["implementation"],
+    "gold_required_checks": ["implementation_completeness_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.869,
+    "notes": "The released implementation raises NotImplementedError."
+  },
+  "tags": ["implementation", "not_implemented"]
+}

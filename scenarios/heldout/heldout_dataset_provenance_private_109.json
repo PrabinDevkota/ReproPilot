@@ -1,0 +1,50 @@
+{
+  "scenario_id": "heldout_dataset_provenance_private_109",
+  "split": "heldout",
+  "state": {
+    "scenario_id": "heldout_dataset_provenance_private_109",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The method reports 84.6% accuracy on an unreleased dataset.",
+      "claim_type": "dataset_claim",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.846,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset Private",
+      "claimed_method": "Standard Classifier",
+      "source_section_id": "sec_data",
+      "novelty_level": 2
+    },
+    "paper_sections": [
+      {"id": "sec_data", "title": "Data", "text": "The unreleased dataset is from an unknown source and cannot redistribute examples.", "section_type": "data", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_readme", "path": "repo/README.md", "artifact_type": "unknown", "content": "Dataset Private is not included.", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset Private", "split": "test", "metric": "accuracy", "seed": 2, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 76,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_MISSING_ARTIFACTS",
+    "gold_failure_type": "dataset_provenance_issue",
+    "gold_evidence_source_ids": ["dataset"],
+    "gold_required_checks": ["dataset_provenance_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.846,
+    "notes": "Heldout private dataset provenance case."
+  },
+  "tags": ["heldout", "dataset_provenance"]
+}

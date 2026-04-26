@@ -1,0 +1,52 @@
+{
+  "scenario_id": "baseline_no_baseline_035",
+  "split": "train",
+  "state": {
+    "scenario_id": "baseline_no_baseline_035",
+    "step": 0,
+    "steps_remaining": 10,
+    "target_claim": {
+      "id": "claim_001",
+      "text": "The proposed method is state of the art on Dataset Q.",
+      "claim_type": "methodology_validity",
+      "claimed_metric_name": "accuracy",
+      "claimed_metric_value": 0.881,
+      "claimed_split": "test",
+      "claimed_dataset": "Dataset Q",
+      "claimed_method": "Sparse Auditor",
+      "source_section_id": "sec_exp",
+      "novelty_level": 4
+    },
+    "paper_sections": [
+      {"id": "sec_exp", "title": "Experiments", "text": "We claim state of the art but provide no baseline comparison table.", "section_type": "experiments", "inspected": false}
+    ],
+    "repo_files": [
+      {"id": "file_eval", "path": "repo/evaluate.py", "artifact_type": "code_file", "content": "evaluate_method_only()", "inspected": false}
+    ],
+    "configs": [
+      {"id": "cfg_main", "path": "configs/main.yaml", "dataset": "Dataset Q", "split": "test", "metric": "accuracy", "seed": 3, "hyperparameters": {}, "inspected": false}
+    ],
+    "logs": [
+      {"id": "log_test", "path": "logs/test.json", "metric_name": "accuracy", "values": [0.881], "split": "test", "seed_values": {}, "inspected": false}
+    ],
+    "checks": [],
+    "evidence": [],
+    "final_verdict": null,
+    "final_failure_type": null,
+    "claim_risk": 68,
+    "evidence_confidence": 0,
+    "last_action_result": null,
+    "action_history": [],
+    "episode_active": true
+  },
+  "hidden_gold": {
+    "gold_verdict": "INCONCLUSIVE_NEEDS_DOMAIN_REVIEW",
+    "gold_failure_type": "baseline_unfairness",
+    "gold_evidence_source_ids": ["baseline"],
+    "gold_required_checks": ["baseline_fairness_check"],
+    "gold_metric_name": "accuracy",
+    "gold_metric_value": 0.881,
+    "notes": "SOTA claim has no visible baseline."
+  },
+  "tags": ["baseline", "missing"]
+}
