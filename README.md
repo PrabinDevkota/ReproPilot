@@ -197,7 +197,7 @@ Run training:
 If testing against the deployed Space, use:
 
 ```bash
-uv run python scripts/http_endpoint_smoke.py --url TODO_ADD_HF_SPACE_URL
+uv run python scripts/http_endpoint_smoke.py --url https://riwaj43adz-repro.hf.space
 ```
 
 ## Submission Links
