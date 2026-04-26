@@ -90,6 +90,7 @@ The reward is interpretable and intentionally shaped around reproducibility work
 - **Anti-idle / anti-gaming reward:** penalizes repeated actions, `do_nothing`, hidden/gold-answer access attempts, fabricated evidence, premature verdicts, and timeout without a verdict.
 
 ![Reward component breakdown](assets/reward_component_breakdown.png)
+
 **Figure: Reward component breakdown.** The reward combines objective progress, environment feedback, valid action formatting, audit-policy behavior, and anti-idle incentives so the agent is rewarded for reproducibility work rather than superficial answers.
 
 ## Training Setup
@@ -112,18 +113,23 @@ Notebook outputs include reward logs, learning curves, reward component plots, f
 The key comparison is simple: the random baseline often receives negative mean reward because it wastes steps or submits weak verdicts, while trained GRPO stages learn to collect evidence and use the audit tools before answering.
 
 ![Baseline vs trained reward](assets/baseline_vs_trained_reward.png)
+
 **Figure 1. Baseline vs trained reward.** The trained GRPO stages achieve much higher mean reward than the random baseline on the deployed Hugging Face Space.
 
 ![Reward and loss training progress](assets/reward_loss_training_progress.png)
+
 **Figure 2. Reward and loss training progress.** Rolling reward improves quickly and remains high, while rolling mean loss stays controlled across training steps.
 
 ![Training loss curve](assets/training_loss_curve.png)
+
 **Figure 3. Training loss curve.** GRPO training loss remains bounded across stages, providing the required loss evidence from a real training run.
 
 ![Training signal - rolling reward averages](assets/training_signal_rolling_reward_averages.png)
+
 **Figure 4. Training signal - rolling reward averages.** Total reward rises quickly and stabilizes, while objective and environment reward components improve during training.
 
 ![Total reward by step](assets/reward_curve_by_step.png)
+
 **Figure 5. Total reward by step.** Rewards remain consistently positive across trained stages B, C, and D after the initial learning phase.
 
 After training, the behavior changes from guessing to investigation. A random or untrained baseline often burns steps, repeats low-value actions, or submits unsupported verdicts. The trained policy more reliably inspects artifacts, runs the relevant deterministic checks, gathers evidence, and submits a verdict tied to observed evidence.
@@ -205,7 +211,7 @@ uv run python scripts/http_endpoint_smoke.py --url https://riwaj43adz-repro.hf.s
 | Item | Link or path |
 | --- | --- |
 | Hugging Face Space | [https://huggingface.co/spaces/riwaj43adz/repro](https://huggingface.co/spaces/riwaj43adz/repro) |
-| Training Notebook (with logs & figures) | [notebooks/trainer.ipynb](notebooks/trainer.ipynb) |
+| Training Notebook (with logs & figures) | [https://colab.research.google.com/drive/1iut9Z-XqRx46OYOxR68C8wSA4BsPZyAr?usp=sharing](https://colab.research.google.com/drive/1iut9Z-XqRx46OYOxR68C8wSA4BsPZyAr?usp=sharingb) |
 | Mini-blog / video / slides | [Blog.md](Blog.md) |
 | OpenEnv manifest | [openenv.yaml](openenv.yaml) |
 
