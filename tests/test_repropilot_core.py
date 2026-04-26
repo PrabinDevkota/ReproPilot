@@ -80,6 +80,45 @@ def test_transition_and_submit_verdict() -> None:
     assert "verdict_correctness" in obs.metadata["reward_breakdown"]
 
 
+def test_dense_action_shaping_prefers_relevant_checks_over_read_claim() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    read_obs = env.step(AgentAction(action_type=ActionType.read_claim, target_id="claim_001"))
+
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    check_obs = env.step(AgentAction(action_type=ActionType.run_split_check, target_id="claim_001"))
+
+    assert (check_obs.reward or 0.0) > (read_obs.reward or 0.0)
+    assert check_obs.metadata["reward_breakdown"]["checker_usage"] > 0
+
+
+def test_do_nothing_is_penalized_for_single_step_training() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    obs = env.step(AgentAction(action_type=ActionType.do_nothing))
+    assert (obs.reward or 0.0) < 0
+
+
+def test_compare_claim_to_artifacts_runs_multiple_checks() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    obs = env.step(AgentAction(action_type=ActionType.compare_claim_to_artifacts, target_id="claim_001"))
+    check_names = {c["check_name"] for c in obs.metadata["checks"]}
+    assert "split_check" in check_names
+    assert "metric_check" in check_names
+    assert (obs.reward or 0.0) > 0.2
+
+
+def test_synthesize_findings_rewards_existing_audit_progress() -> None:
+    env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
+    env.reset()
+    env.step(AgentAction(action_type=ActionType.run_split_check, target_id="claim_001"))
+    obs = env.step(AgentAction(action_type=ActionType.synthesize_findings))
+    assert (obs.reward or 0.0) > 0
+    assert "Synthesis:" in (obs.metadata.get("last_action_result") or obs.echoed_message)
+
+
 def test_hidden_gold_access_penalized() -> None:
     env = ReproPilotEnvironment(scenario_path("split_mismatch_test_vs_val_001.json"))
     env.reset()

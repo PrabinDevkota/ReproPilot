@@ -1,7 +1,7 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
-# Colab / Kaggle: locate the ghostexec repo, chdir, extend sys.path, and
-# ``pip install -e .`` so ``from ghostexec...`` works when the notebook cwd
+# Colab / Kaggle: locate the ReproPilot repo, chdir, extend sys.path, and
+# ``pip install -e .`` so project imports work when the notebook cwd
 # is not the repo root (e.g. /kaggle/working) or cells are run out of order.
 
 from __future__ import annotations
@@ -17,20 +17,24 @@ def candidate_directories() -> list[Path]:
     home = Path.home()
     bases = [
         Path.cwd(),
-        Path.cwd() / "ghostexec",
-        Path("/content/ghostexec"),
-        home / "SageMaker" / "ghostexec",
+        Path.cwd() / "ReproPilot",
+        Path.cwd() / "repropilot",
+        Path("/content/ReproPilot"),
+        Path("/content/repropilot"),
+        home / "SageMaker" / "ReproPilot",
+        home / "SageMaker" / "repropilot",
         home / "SageMaker",
-        Path("/kaggle/working/ghostexec"),
+        Path("/kaggle/working/ReproPilot"),
+        Path("/kaggle/working/repropilot"),
         Path("/kaggle/working"),
     ]
     for b in bases:
-        out.extend([b, b / "ghostexec"])
+        out.extend([b, b / "ReproPilot", b / "repropilot"])
 
     kin = Path("/kaggle/input")
     if kin.is_dir():
         for ds in sorted(kin.iterdir()):
-            out.extend([ds, ds / "ghostexec"])
+            out.extend([ds, ds / "ReproPilot", ds / "repropilot"])
     return out
 
 
@@ -47,16 +51,16 @@ def find_root() -> Path | None:
 def apply_grpo_training_defaults() -> None:
     """Set recommended GRPO / reward env vars only when unset (Colab / local notebooks).
 
-    Call after ``ensure_ghostexec_on_path()`` so training cells pick up sane defaults:
+    Call after ``ensure_repropilot_on_path()`` so training cells pick up sane defaults:
     multi-turn in-process rollouts, mild reward squash, tie-break jitter for zero-std groups.
     """
     defaults: dict[str, str] = {
-        "GHOSTEXEC_ROLLOUT_TURNS": "3",
-        "GHOSTEXEC_ROLLOUT_GAMMA": "0.9",
-        "GHOSTEXEC_REWARD_SQUASH": "1",
-        "GHOSTEXEC_REWARD_SQUASH_SCALE": "2.5",
-        "GHOSTEXEC_REWARD_JITTER": "1",
-        "GHOSTEXEC_REWARD_JITTER_MAG": "0.001",
+        "REPROPILOT_ROLLOUT_TURNS": "3",
+        "REPROPILOT_ROLLOUT_GAMMA": "0.9",
+        "REPROPILOT_REWARD_SQUASH": "1",
+        "REPROPILOT_REWARD_SQUASH_SCALE": "2.5",
+        "REPROPILOT_REWARD_JITTER": "1",
+        "REPROPILOT_REWARD_JITTER_MAG": "0.001",
         "TRL_EXPERIMENTAL_SILENCE": "1",
     }
     for key, val in defaults.items():
@@ -64,12 +68,12 @@ def apply_grpo_training_defaults() -> None:
             os.environ[key] = val
 
 
-def ensure_ghostexec_on_path(*, pip_install: bool = True) -> Path:
+def ensure_repropilot_on_path(*, pip_install: bool = True) -> Path:
     """Return repo root. Idempotent: safe to call from every notebook section."""
     r = find_root()
     if r is None:
         raise RuntimeError(
-            "ghostexec repo not found (need pyproject.toml and models.py). "
+            "ReproPilot repo not found (need pyproject.toml and models.py). "
             "On Kaggle: enable Internet and run the clone cell, or add this repo as a Dataset "
             "under /kaggle/input (see README)."
         )

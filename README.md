@@ -31,7 +31,11 @@ The project keeps the original OpenEnv/FastAPI shape but replaces the domain wit
 - `inspect_code_file`
 - `inspect_config`
 - `inspect_logs`
+- `inspect_result_table`
+- `inspect_dataset_card`
+- `inspect_checkpoint`
 - `search_artifacts`
+- `compare_claim_to_artifacts`
 - `run_metric_check`
 - `run_split_check`
 - `run_leakage_check`
@@ -39,6 +43,7 @@ The project keeps the original OpenEnv/FastAPI shape but replaces the domain wit
 - `run_ablation_check`
 - `run_paper_code_consistency_check`
 - `run_reproduction_check`
+- `synthesize_findings`
 - `mark_inconclusive`
 - `submit_verdict`
 - `do_nothing`

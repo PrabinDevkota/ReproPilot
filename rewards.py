@@ -4,6 +4,7 @@ from __future__ import annotations
 
 try:
     from .models import (
+        ActionType,
         AgentAction,
         AuditState,
         CheckName,
@@ -14,6 +15,7 @@ try:
     )
 except ImportError:
     from models import (
+        ActionType,
         AgentAction,
         AuditState,
         CheckName,
@@ -164,3 +166,75 @@ def shaping_reward(*, valid: bool, repeated: bool = False, relevant: bool = Fals
     if hidden_access:
         score -= 0.3
     return RewardBreakdown(format_valid=0.2 if valid else -0.3, shaping=score, anti_hallucination=-1.0 if hidden_access else 0.0, final=score)
+
+
+def action_shaping_reward(
+    state: AuditState,
+    gold: HiddenGold,
+    action: AgentAction,
+    *,
+    valid: bool,
+    repeated: bool = False,
+    relevant: bool = False,
+    hidden_access: bool = False,
+) -> RewardBreakdown:
+    """Dense non-terminal reward for audit progress.
+
+    GRPO needs reward variance inside each sampled group. A flat "valid action"
+    reward makes the model collapse to safe starter actions such as read_claim.
+    This channel gives more credit to actions that advance an audit: inspecting
+    artifacts, running deterministic checks, and using claim-specific checks.
+    """
+    if hidden_access:
+        return RewardBreakdown(format_valid=-0.3, shaping=-0.6, anti_hallucination=-1.0, final=-1.6)
+    if not valid:
+        return RewardBreakdown(format_valid=-0.3, shaping=-0.35, final=-0.35)
+
+    at = action.action_type
+    score = 0.0
+    if at == ActionType.do_nothing:
+        score = -0.25
+    elif at == ActionType.read_claim:
+        score = 0.02 if not repeated else -0.15
+    elif at in {
+        ActionType.inspect_paper_section,
+        ActionType.inspect_code_file,
+        ActionType.inspect_config,
+        ActionType.inspect_logs,
+        ActionType.inspect_result_table,
+        ActionType.inspect_dataset_card,
+        ActionType.inspect_checkpoint,
+        ActionType.search_artifacts,
+    }:
+        score = 0.18 if relevant else 0.06
+    elif at == ActionType.compare_claim_to_artifacts:
+        score = 0.55 if relevant else 0.25
+    elif at in {
+        ActionType.run_metric_check,
+        ActionType.run_split_check,
+        ActionType.run_leakage_check,
+        ActionType.run_seed_check,
+        ActionType.run_ablation_check,
+        ActionType.run_paper_code_consistency_check,
+        ActionType.run_reproduction_check,
+    }:
+        score = 0.45 if relevant else 0.18
+        if action.target_id in {None, ""}:
+            score -= 0.08
+    elif at == ActionType.mark_inconclusive:
+        score = 0.20 if relevant else -0.05
+    elif at == ActionType.synthesize_findings:
+        score = 0.25 if relevant else -0.02
+    elif at == ActionType.submit_verdict:
+        score = -0.10
+
+    if repeated:
+        score -= 0.12
+
+    return RewardBreakdown(
+        format_valid=0.2,
+        checker_usage=0.25 if relevant and str(at.value).startswith("run_") else 0.0,
+        shaping=score,
+        anti_hallucination=0.0,
+        final=score,
+    )

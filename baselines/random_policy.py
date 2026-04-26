@@ -23,8 +23,16 @@ def random_action(obs: ReproPilotObservation, rng: random.Random) -> AgentAction
         target_pool = list(meta.get("config_ids") or [])
     elif action_type == ActionType.inspect_logs:
         target_pool = list(meta.get("log_ids") or [])
+    elif action_type == ActionType.inspect_result_table:
+        target_pool = list(meta.get("result_table_ids") or [])
+    elif action_type == ActionType.inspect_dataset_card:
+        target_pool = list(meta.get("dataset_card_ids") or [])
+    elif action_type == ActionType.inspect_checkpoint:
+        target_pool = list(meta.get("checkpoint_ids") or [])
     elif action_type == ActionType.search_artifacts:
         target_pool = ["accuracy", "split", "seed", "ablation", "entropy"]
+    elif action_type == ActionType.compare_claim_to_artifacts:
+        target_pool = [str(meta.get("claim_id") or "claim_001")]
     elif action_type == ActionType.submit_verdict:
         return AgentAction(
             action_type=action_type,

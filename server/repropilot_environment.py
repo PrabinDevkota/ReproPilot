@@ -44,7 +44,7 @@ try:
         Scenario,
         ValidationVerdict,
     )
-    from ..rewards import compute_terminal_reward, shaping_reward
+    from ..rewards import action_shaping_reward, compute_terminal_reward, shaping_reward
 except ImportError:
     from briefing import build_briefing
     from checkers import (
@@ -70,7 +70,7 @@ except ImportError:
         Scenario,
         ValidationVerdict,
     )
-    from rewards import compute_terminal_reward, shaping_reward
+    from rewards import action_shaping_reward, compute_terminal_reward, shaping_reward
 
 
 def _default_scenario_path() -> Path:
@@ -143,7 +143,7 @@ class ReproPilotEnvironment(Environment):
 
         if hidden_access:
             st.last_action_result = "Rejected: attempted access to hidden/gold answer fields."
-            bd = shaping_reward(valid=False, repeated=repeated, hidden_access=True)
+            bd = action_shaping_reward(st, self.hidden_gold, action, valid=False, repeated=repeated, hidden_access=True)
             self._last_reward_breakdown = bd
             return self._maybe_timeout_or_observation(bd)
 
@@ -160,8 +160,16 @@ class ReproPilotEnvironment(Environment):
             valid, relevant = self._inspect_config(action.target_id)
         elif at == ActionType.inspect_logs:
             valid, relevant = self._inspect_log(action.target_id)
+        elif at == ActionType.inspect_result_table:
+            valid, relevant = self._inspect_file(action.target_id, {ArtifactType.result_table})
+        elif at == ActionType.inspect_dataset_card:
+            valid, relevant = self._inspect_file(action.target_id, {ArtifactType.dataset_card})
+        elif at == ActionType.inspect_checkpoint:
+            valid, relevant = self._inspect_file(action.target_id, {ArtifactType.checkpoint})
         elif at == ActionType.search_artifacts:
             valid, relevant = self._search(action.target_id or action.explanation or "")
+        elif at == ActionType.compare_claim_to_artifacts:
+            valid, relevant = self._compare_claim_to_artifacts()
         elif at == ActionType.run_metric_check:
             metric_check(st)
             relevant = CheckName.metric_check in self.hidden_gold.gold_required_checks
@@ -183,6 +191,8 @@ class ReproPilotEnvironment(Environment):
         elif at == ActionType.run_reproduction_check:
             reproduction_check(st)
             relevant = CheckName.reproduction_check in self.hidden_gold.gold_required_checks
+        elif at == ActionType.synthesize_findings:
+            valid, relevant = self._synthesize_findings()
         elif at == ActionType.mark_inconclusive:
             st.last_action_result = "Marked current audit as inconclusive pending more artifacts."
             relevant = self.hidden_gold.gold_failure_type in {FailureType.missing_artifact, FailureType.ambiguous_method}
@@ -194,7 +204,7 @@ class ReproPilotEnvironment(Environment):
             valid = False
             st.last_action_result = f"Unsupported action: {at}"
 
-        bd = shaping_reward(valid=valid, repeated=repeated, relevant=relevant)
+        bd = action_shaping_reward(st, self.hidden_gold, action, valid=valid, repeated=repeated, relevant=relevant)
         self._last_reward_breakdown = bd
         return self._maybe_timeout_or_observation(bd)
 
@@ -289,6 +299,44 @@ class ReproPilotEnvironment(Environment):
         self.audit_state.last_action_result = "Search hits: " + (", ".join(hits[:12]) if hits else "(none)")
         return True, bool(hits)
 
+    def _compare_claim_to_artifacts(self) -> tuple[bool, bool]:
+        st = self.audit_state
+        before = len(st.checks)
+        ran: list[str] = []
+        if st.target_claim.claimed_metric_name:
+            metric_check(st)
+            ran.append(CheckName.metric_check.value)
+        if st.target_claim.claimed_split:
+            split_check(st)
+            ran.append(CheckName.split_check.value)
+        if st.logs:
+            reproduction_check(st)
+            ran.append(CheckName.reproduction_check.value)
+        if st.target_claim.claimed_method:
+            paper_code_consistency_check(st)
+            ran.append(CheckName.paper_code_consistency_check.value)
+        if not ran:
+            st.last_action_result = "No comparable claim fields or artifacts were available."
+            return False, False
+        relevant = bool(set(self.hidden_gold.gold_required_checks) & {c.check_name for c in st.checks[before:]})
+        st.last_action_result = "Compared claim to artifacts using: " + ", ".join(ran)
+        return True, relevant
+
+    def _synthesize_findings(self) -> tuple[bool, bool]:
+        st = self.audit_state
+        failed = [c for c in st.checks if c.issue_found]
+        observed = [e for e in st.evidence if e.observed]
+        if failed:
+            st.last_action_result = "Synthesis: failing checks found: " + ", ".join(
+                f"{c.check_name.value}:{c.failure_type.value}" for c in failed[-4:]
+            )
+            return True, True
+        if observed or st.checks:
+            st.last_action_result = f"Synthesis: {len(st.checks)} checks run, {len(observed)} evidence items observed, no failing check yet."
+            return True, True
+        st.last_action_result = "Synthesis needs at least one inspection, check, or evidence item."
+        return True, False
+
     def _is_hidden_access(self, action: AgentAction) -> bool:
         hay = " ".join(
             str(x or "")
@@ -313,6 +361,9 @@ class ReproPilotEnvironment(Environment):
             "code_file_ids": [f.id for f in st.repo_files if f.artifact_type in {ArtifactType.code_file, ArtifactType.script}],
             "config_ids": [c.id for c in st.configs],
             "log_ids": [l.id for l in st.logs],
+            "result_table_ids": [f.id for f in st.repo_files if f.artifact_type == ArtifactType.result_table],
+            "dataset_card_ids": [f.id for f in st.repo_files if f.artifact_type == ArtifactType.dataset_card],
+            "checkpoint_ids": [f.id for f in st.repo_files if f.artifact_type == ArtifactType.checkpoint],
             "inspected_paper_section_ids": [s.id for s in st.paper_sections if s.inspected],
             "inspected_code_file_ids": [f.id for f in st.repo_files if f.inspected],
             "inspected_config_ids": [c.id for c in st.configs if c.inspected],
@@ -323,7 +374,22 @@ class ReproPilotEnvironment(Environment):
             "final_failure_type": st.final_failure_type.value if st.final_failure_type else None,
             "step_ok": True,
             "reward_breakdown": self._last_reward_breakdown.model_dump() if self._last_reward_breakdown else {},
+            "suggested_action_families": self._suggested_action_families(st),
         }
+
+    def _suggested_action_families(self, st: AuditState) -> list[str]:
+        suggestions: list[str] = []
+        if not st.checks:
+            suggestions.append("inspect_or_search_before_verdict")
+        if st.target_claim.claimed_split:
+            suggestions.append("split_consistency")
+        if st.target_claim.claimed_metric_name:
+            suggestions.append("metric_consistency")
+        if st.logs:
+            suggestions.append("reproduction_or_result_check")
+        if st.target_claim.claimed_method:
+            suggestions.append("paper_code_consistency")
+        return suggestions
 
     def _observation(self, reward: float, done: bool) -> ReproPilotObservation:
         text = build_briefing(self.audit_state)
