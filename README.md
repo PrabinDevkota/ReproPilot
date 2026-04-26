@@ -6,6 +6,18 @@ ReproPilot is an OpenEnv-compliant environment for training LLM agents on reprod
 
 The goal is not to prove scientific truth from scratch. The goal is to train agents to stop guessing and instead perform disciplined, multi-step reproducibility audits over the evidence they can actually inspect.
 
+## Quick Read
+
+**Problem:** LLMs can sound confident about research results without checking whether the paper, code, logs, configs, and dataset evidence agree.
+
+**Environment:** ReproPilot gives the agent a research audit briefing, artifact IDs, and a 12-step budget. The agent must inspect evidence, run checks, plan next steps, and submit a verdict as structured JSON.
+
+**Results:** GRPO training changes behavior from random or shallow action selection into evidence-seeking audit behavior. The plots below show trained stages B/C/D strongly outperforming the random baseline, with reward improving while loss remains controlled.
+
+**Why it matters:** Reviewers, research engineers, ML platform teams, and anyone evaluating AI-generated research claims need agents that can audit evidence instead of writing plausible but unverified summaries.
+
+Try it through the Hugging Face Space once the final URL is added: [Hugging Face Space](TODO_ADD_HF_SPACE_URL).
+
 ## Why this matters
 
 LLMs often produce plausible research and debugging narratives without doing the careful investigation that reproducibility work requires. In real reviews, the hard questions are operational:
@@ -27,9 +39,11 @@ It also exercises long-horizon planning: the agent has up to 12 steps to move fr
 
 ## Environment Overview
 
-At reset, the agent receives a plain-text research audit briefing with the target claim, paper sections, artifact identifiers, available configs/logs/result tables, and validation checks already run. Each step accepts one structured `AgentAction` JSON object and returns a new observation, reward, done flag, and metadata containing scenario state, observed evidence, checker results, and reward breakdown.
+The environment is a reproducibility investigation loop. At reset, the agent receives a plain-text research audit briefing with the target claim, paper sections, artifact identifiers, available configs/logs/result tables, and validation checks already run. The briefing is intentionally close to what a research engineer or reviewer would face: enough evidence to investigate, but not a hidden answer.
 
-The action space includes artifact inspection, search, composite audit actions, deterministic methodology checks, episode control, and final verdict submission. Success means submitting the right verdict and failure type with valid evidence after using relevant checks, while avoiding fabricated evidence, hidden gold access, repeated idle actions, and unsupported claims.
+On each step, the agent chooses one structured action. It can read the claim, inspect a paper section, inspect code/config/log/result artifacts, search artifacts, compare claims to artifacts, audit experiment design, rank evidence, plan the next check, synthesize findings, run deterministic checks, or submit a final verdict.
+
+The environment returns the next observation, a reward, a done flag, and metadata containing scenario state, observed evidence, checker results, and reward breakdown. Success means submitting the right verdict and failure type with valid evidence after using relevant checks, while avoiding fabricated evidence, hidden gold access, repeated idle actions, and unsupported claims.
 
 ReproPilot follows the OpenEnv reset / step / state pattern:
 
@@ -81,6 +95,8 @@ Notebook outputs include reward logs, learning curves, reward component plots, f
 
 ## Results
 
+The key comparison is simple: the random baseline often receives negative mean reward because it wastes steps or submits weak verdicts, while trained GRPO stages learn to collect evidence and use the audit tools before answering.
+
 ![Baseline vs trained reward](assets/baseline_vs_trained_reward.png)
 **Figure 1. Baseline vs trained reward.** The trained GRPO stages achieve much higher mean reward than the random baseline on the deployed Hugging Face Space.
 
@@ -97,6 +113,8 @@ Notebook outputs include reward logs, learning curves, reward component plots, f
 **Figure 5. Total reward by step.** Rewards remain consistently positive across trained stages B, C, and D after the initial learning phase.
 
 After training, the behavior changes from guessing to investigation. A random or untrained baseline often burns steps, repeats low-value actions, or submits unsupported verdicts. The trained policy more reliably inspects artifacts, runs the relevant deterministic checks, gathers evidence, and submits a verdict tied to observed evidence.
+
+In a typical split-mismatch case, the trained policy does not stop at the paper claim. It inspects the evaluation code/config, discovers that the artifact uses validation while the paper claims test performance, runs the split check, and submits a grounded `split_mismatch` verdict. That is the behavior ReproPilot is designed to reward.
 
 ## Additional Diagnostics
 
@@ -183,7 +201,8 @@ ReproPilot separates environment/server code from client, training, and evaluati
 
 The environment uses standard reset / step / state behavior. `reset` loads a scenario and returns the initial research audit briefing. `step` validates and applies a structured action, updates the audit state, returns the next briefing, and attaches reward metadata. The [openenv.yaml](openenv.yaml) manifest declares the OpenEnv runtime, task families, max steps, and grader entry points.
 
-## Example Action
+<details>
+<summary>Example structured actions</summary>
 
 ```json
 {
@@ -193,7 +212,7 @@ The environment uses standard reset / step / state behavior. `reset` loads a sce
 }
 ```
 
-## Example Final Verdict
+Example final verdict:
 
 ```json
 {
@@ -204,6 +223,8 @@ The environment uses standard reset / step / state behavior. `reset` loads a sce
   "explanation": "The paper claims test accuracy, but the evaluation code loads the validation split."
 }
 ```
+
+</details>
 
 ## Evaluation Story
 
