@@ -16,22 +16,45 @@ tags:
 
 # ReproPilot
 
-ReproPilot is an OpenEnv environment for training LLM agents to audit research-paper claims against supplied artifacts. The agent receives a research audit briefing, chooses structured JSON actions, inspects paper/code/config/log evidence, runs deterministic methodology checks, and submits a grounded verdict.
+ReproPilot is an OpenEnv-compliant environment for training LLM agents on reproducibility investigation and professional research-workflow tasks. The agent audits research-paper claims against supplied artifacts, chooses structured JSON actions, gathers evidence, runs deterministic methodology checks, and submits a grounded verdict.
 
-The goal is not to prove scientific truth from scratch. The goal is to teach a model to stop guessing and instead perform a disciplined reproducibility audit over the evidence it can see.
+The goal is not to prove scientific truth from scratch. The goal is to train agents to stop guessing and instead perform disciplined, multi-step reproducibility audits over the evidence they can actually inspect.
 
-## Why It Matters
+## Why this matters
 
-AI systems can generate plausible papers, benchmarks, and result tables. Human reviewers still have to answer basic but time-consuming questions:
+LLMs often produce plausible research and debugging narratives without doing the careful investigation that reproducibility work requires. In real reviews, the hard questions are operational:
 
-- Does the claimed metric match the artifact logs?
-- Does the claim say test while the code uses validation?
+- Does the claimed metric match the logs?
+- Does the paper say test while the code uses validation?
 - Was the test set used for hyperparameter search?
 - Are baselines compared fairly?
 - Is the claimed method actually implemented?
 - Is a strong result supported by enough runs, seeds, and evidence?
 
-ReproPilot turns those questions into an RL environment with interpretable rewards.
+ReproPilot targets that capability gap. It trains agents to inspect evidence, choose valid actions, avoid idle or reward-hacking behavior, and improve over long-running environment interactions.
+
+## Hackathon Theme Fit
+
+ReproPilot fits **Theme #3.1: Professional Tasks / World Modeling**. The agent interacts with a dynamic environment, maintains state across a multi-step audit, and must decide what evidence to inspect before issuing a final judgment.
+
+It also exercises long-horizon planning: the agent has up to 12 steps to move from a paper claim to artifact inspection, methodology checks, evidence synthesis, and a calibrated verdict.
+
+## Environment Overview
+
+At reset, the agent receives a plain-text research audit briefing with the target claim, paper sections, artifact identifiers, available configs/logs/result tables, and validation checks already run. Each step accepts one structured `AgentAction` JSON object and returns a new observation, reward, done flag, and metadata containing scenario state, observed evidence, checker results, and reward breakdown.
+
+The action space includes artifact inspection, search, composite audit actions, deterministic methodology checks, episode control, and final verdict submission. Success means submitting the right verdict and failure type with valid evidence after using relevant checks, while avoiding fabricated evidence, hidden gold access, repeated idle actions, and unsupported claims.
+
+ReproPilot follows the OpenEnv reset / step / state pattern:
+
+- `openenv.yaml` declares the environment metadata, tasks, runtime, port, and max steps.
+- `server/repropilot_environment.py` implements the OpenEnv environment class.
+- `server/app.py` exposes the OpenEnv HTTP/web interface through FastAPI.
+- `pyproject.toml` depends on `openenv-core[core]>=0.2.3`; the committed lockfile resolves `openenv-core==0.2.3`.
+
+Hugging Face Space deployment:
+
+- [Hugging Face Space](TODO_ADD_HF_SPACE_URL)
 
 ## Current Scale
 
@@ -42,94 +65,139 @@ ReproPilot turns those questions into an RL environment with interpretable rewar
 - 29 legal JSON actions
 - 12 deterministic audit checks
 
-## Architecture
+## Reward Design
 
-```text
-JSON scenarios
-  -> Pydantic audit state
-  -> plain-text research briefing
-  -> structured AgentAction JSON
-  -> OpenEnv transition
-  -> deterministic checks + evidence updates
-  -> shaped and terminal rewards
-  -> GRPO/SFT training in Colab
-  -> heldout evaluation
+The reward is interpretable and intentionally shaped around reproducibility work rather than surface-level answers.
+
+- **Objective progress reward:** credits moving toward the correct verdict, correct failure type, valid evidence, and relevant checker usage.
+- **Environment feedback reward:** gives dense step-level feedback for useful inspection, comparison, audit, planning, ranking, and synthesis actions.
+- **Valid action / formatting reward:** rewards valid structured JSON actions and penalizes malformed or unsupported actions.
+- **Audit-policy / evidence-seeking reward:** rewards inspecting the right artifacts, running deterministic checks, ranking evidence, and grounding the final verdict in observed evidence.
+- **Anti-idle / anti-gaming reward:** penalizes repeated actions, `do_nothing`, hidden/gold-answer access attempts, fabricated evidence, premature verdicts, and timeout without a verdict.
+
+![Reward component breakdown](assets/reward_component_breakdown.png)
+**Figure: Reward component breakdown.** The reward combines objective progress, environment feedback, valid action formatting, audit-policy behavior, and anti-idle incentives so the agent is rewarded for reproducibility work rather than superficial answers.
+
+## Training Setup
+
+Training uses Hugging Face tooling with TRL GRPO, plus a small SFT warm-start for JSON/action routing. The active notebook is [notebooks/trainer.ipynb](notebooks/trainer.ipynb), designed for Google Colab with `!pip install` setup, an `unsloth/Qwen2.5-3B-Instruct` default model, LoRA adapter training, staged GRPO, and reward-component logging.
+
+The training loop connects to the deployed Hugging Face Space environment rather than only training on a static dataset: the notebook calls `/reset` for a research audit briefing and `/step` to score model-generated JSON actions.
+
+Training stages:
+
+- **SFT warm-start:** teaches objective-to-action routing.
+- **Stage B:** higher-temperature exploration.
+- **Stage C:** lower-temperature refinement.
+- **Stage D:** low-temperature stabilization.
+
+Notebook outputs include reward logs, learning curves, reward component plots, final LoRA adapter artifacts, and a run manifest.
+
+## Results
+
+![Baseline vs trained reward](assets/baseline_vs_trained_reward.png)
+**Figure 1. Baseline vs trained reward.** The trained GRPO stages achieve much higher mean reward than the random baseline on the deployed Hugging Face Space.
+
+![Reward and loss training progress](assets/reward_loss_training_progress.png)
+**Figure 2. Reward and loss training progress.** Rolling reward improves quickly and remains high, while rolling mean loss stays controlled across training steps.
+
+![Training loss curve](assets/training_loss_curve.png)
+**Figure 3. Training loss curve.** GRPO training loss remains bounded across stages, providing the required loss evidence from a real training run.
+
+![Training signal - rolling reward averages](assets/training_signal_rolling_reward_averages.png)
+**Figure 4. Training signal - rolling reward averages.** Total reward rises quickly and stabilizes, while objective and environment reward components improve during training.
+
+![Total reward by step](assets/reward_curve_by_step.png)
+**Figure 5. Total reward by step.** Rewards remain consistently positive across trained stages B, C, and D after the initial learning phase.
+
+After training, the behavior changes from guessing to investigation. A random or untrained baseline often burns steps, repeats low-value actions, or submits unsupported verdicts. The trained policy more reliably inspects artifacts, runs the relevant deterministic checks, gathers evidence, and submits a verdict tied to observed evidence.
+
+## Additional Diagnostics
+
+<details>
+<summary>Additional diagnostics</summary>
+
+![Reward vs loss](assets/reward_vs_loss.png)
+**Diagnostic: Reward vs loss.** Most later-stage samples cluster around low loss and positive reward, with early-stage outliers visible.
+
+</details>
+
+## How to Run
+
+Install dependencies:
+
+```bash
+uv sync --extra dev
 ```
 
-Core files:
+Run the OpenEnv server locally:
 
-- `models.py` defines claims, artifacts, evidence, checks, actions, verdicts, and scenarios.
-- `checkers.py` implements deterministic validation checks.
-- `server/repropilot_environment.py` implements the OpenEnv environment.
-- `rewards.py` implements dense action shaping and final verdict rewards.
-- `notebooks/trainer.ipynb` trains a policy with Unsloth + TRL GRPO against the deployed Hugging Face Space.
-- `evaluation/evaluate_policy.py` runs baseline or trained policy evaluation.
-- `tests/test_repropilot_core.py` verifies schemas, checkers, transitions, rewards, and heldout evaluation.
+```bash
+uv run server --port 8000
+```
 
-## Failure Modes
+Open the local web interface:
 
-ReproPilot covers common research-audit failures:
+```text
+http://127.0.0.1:8000/web
+```
 
-- `metric_mismatch`
-- `split_mismatch`
-- `data_leakage`
-- `cherry_picked_seed`
-- `paper_code_mismatch`
-- `invalid_ablation`
-- `result_mismatch`
-- `missing_artifact`
-- `dataset_provenance_issue`
-- `hyperparameter_search_bias`
-- `baseline_unfairness`
-- `statistical_underpower`
-- `incomplete_implementation`
-- `ambiguous_method`
-- `unsupported_claim`
+Smoke-test the HTTP endpoints:
 
-## Legal Actions
+```bash
+uv run python scripts/http_endpoint_smoke.py --local
+```
 
-Artifact inspection:
+Run a short local episode demo:
 
-- `read_claim`
-- `inspect_paper_section`
-- `inspect_code_file`
-- `inspect_config`
-- `inspect_logs`
-- `inspect_result_table`
-- `inspect_dataset_card`
-- `inspect_checkpoint`
-- `search_artifacts`
+```bash
+uv run python scripts/demo_repropilot.py
+```
 
-Composite audit actions:
+Run tests:
 
-- `compare_claim_to_artifacts`
-- `audit_experiment_design`
-- `rank_evidence`
-- `plan_next_check`
-- `synthesize_findings`
+```bash
+uv run --extra dev pytest -q
+```
 
-Deterministic checks:
+Run heldout evaluation from Python:
 
-- `run_metric_check`
-- `run_split_check`
-- `run_leakage_check`
-- `run_seed_check`
-- `run_ablation_check`
-- `run_paper_code_consistency_check`
-- `run_reproduction_check`
-- `run_dataset_provenance_check`
-- `run_hyperparameter_search_check`
-- `run_baseline_fairness_check`
-- `run_statistical_significance_check`
-- `run_implementation_completeness_check`
+```python
+from baselines.smart_policy import smart_action
+from evaluation.evaluate_policy import evaluate
 
-Episode control:
+report = evaluate(lambda obs, rng: smart_action(obs, rng), split="heldout")
+print(report.aggregate())
+```
 
-- `mark_inconclusive`
-- `submit_verdict`
-- `do_nothing`
+Run training:
 
-Example action:
+- Open [notebooks/trainer.ipynb](notebooks/trainer.ipynb) in Colab.
+- Set the Hugging Face Space URL in the notebook.
+- Run the SFT warm-start and GRPO stages B/C/D.
+
+If testing against the deployed Space, use:
+
+```bash
+uv run python scripts/http_endpoint_smoke.py --url TODO_ADD_HF_SPACE_URL
+```
+
+## Submission Links
+
+| Item | Link or path |
+| --- | --- |
+| Hugging Face Space | TODO_ADD_HF_SPACE_URL |
+| Training notebook / Colab | [notebooks/trainer.ipynb](notebooks/trainer.ipynb) |
+| Mini-blog / video / slides | TODO_ADD_WRITEUP_OR_VIDEO_LINK |
+| OpenEnv manifest | [openenv.yaml](openenv.yaml) |
+
+## Engineering Notes
+
+ReproPilot separates environment/server code from client, training, and evaluation code. The OpenEnv environment lives in [server/repropilot_environment.py](server/repropilot_environment.py), the FastAPI/OpenEnv server wrapper lives in [server/app.py](server/app.py), baseline policies live under [baselines](baselines), and heldout evaluation lives in [evaluation/evaluate_policy.py](evaluation/evaluate_policy.py).
+
+The environment uses standard reset / step / state behavior. `reset` loads a scenario and returns the initial research audit briefing. `step` validates and applies a structured action, updates the audit state, returns the next briefing, and attaches reward metadata. The [openenv.yaml](openenv.yaml) manifest declares the OpenEnv runtime, task families, max steps, and grader entry points.
+
+## Example Action
 
 ```json
 {
@@ -139,7 +207,7 @@ Example action:
 }
 ```
 
-Example final verdict:
+## Example Final Verdict
 
 ```json
 {
@@ -151,122 +219,8 @@ Example final verdict:
 }
 ```
 
-## Reward Design
-
-ReproPilot uses two reward layers.
-
-Dense non-terminal shaping rewards useful audit behavior:
-
-- valid JSON actions
-- relevant artifact inspection
-- relevant deterministic checks
-- composite audit actions such as experiment-design audit
-- evidence ranking and synthesis
-- avoiding repeated idle/read-only behavior
-- avoiding hidden gold access
-
-Terminal rewards score final answer quality:
-
-- verdict correctness
-- failure type correctness
-- evidence grounding
-- checker usage
-- reproduction behavior
-- novelty calibration
-- efficiency
-- anti-hallucination
-
-This design gives GRPO useful reward variance before the final verdict, which prevents collapse into safe but useless actions.
-
-## Training
-
-The active training notebook is:
-
-```text
-notebooks/trainer.ipynb
-```
-
-It is designed for Google Colab:
-
-- uses `!pip install` only
-- loads `unsloth/Qwen2.5-3B-Instruct` by default
-- trains a LoRA adapter
-- uses a small SFT warm-start for JSON/action routing
-- runs staged GRPO against the deployed Hugging Face Space
-- logs reward components and plots learning curves
-
-Training stages:
-
-- SFT warm-start: teaches objective-to-action routing.
-- Stage B: higher-temperature exploration.
-- Stage C: lower-temperature refinement.
-- Stage D: low-temperature stabilization.
-
-Notebook outputs:
-
-- `reward_log.csv`
-- `before_after.png`
-- `reward_curve.png`
-- `components.png`
-- `reward_std.png`
-- `kl_curve.png`
-- `rolling_reward.png`
-- final LoRA adapter
-- run manifest
-
-## Local Quickstart
-
-Install dependencies:
-
-```bash
-uv sync --extra dev
-```
-
-Run the server:
-
-```bash
-uv run server --port 8000
-```
-
-Run tests:
-
-```bash
-uv run --extra dev pytest -q
-```
-
-Run heldout evaluation:
-
-```python
-from baselines.smart_policy import smart_action
-from evaluation.evaluate_policy import evaluate
-
-report = evaluate(lambda obs, rng: smart_action(obs, rng), split="heldout")
-print(report.aggregate())
-```
-
-## Hugging Face Space
-
-This repository is configured as a Docker Space. The Space exposes the OpenEnv API and web interface:
-
-- `/health`
-- `/reset`
-- `/step`
-- `/web`
-
-The Colab trainer calls `/reset` to get the research audit briefing and `/step` to score model-generated JSON actions.
-
 ## Evaluation Story
 
-A typical ReproPilot episode:
+A typical ReproPilot episode starts with a briefing saying a method achieves 91.2% test accuracy. A weak model may immediately claim the result is supported. A trained ReproPilot policy inspects the evaluation code and config, notices `split="validation"` while the claim says `test`, runs `run_split_check`, and submits a `split_mismatch` verdict with grounded evidence.
 
-1. The briefing says a method achieves 91.2% test accuracy.
-2. A weak model may immediately claim the result is supported.
-3. A trained ReproPilot policy inspects the evaluation code and config.
-4. It notices `split="validation"` while the claim says `test`.
-5. It runs `run_split_check`.
-6. It submits a verdict with `split_mismatch` and grounded evidence.
-7. The reward breakdown credits verdict correctness, failure type, evidence, and checker use.
-
-## Hackathon Pitch
-
-ReproPilot makes reproducibility auditing trainable. It is not a chatbot that gives opinions about papers. It is an interactive environment where an LLM must take auditable steps, gather evidence, run checks, and justify a final verdict. The reward function is transparent, the scenarios are inspectable, and heldout cases test whether the policy learned the audit process rather than memorizing one bug pattern.
+That is the core story: problem -> environment -> reward -> training -> better reproducibility behavior.
