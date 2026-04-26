@@ -205,7 +205,7 @@ uv run python scripts/http_endpoint_smoke.py --url https://riwaj43adz-repro.hf.s
 | Item | Link or path |
 | --- | --- |
 | Hugging Face Space | [https://huggingface.co/spaces/riwaj43adz/repro](https://huggingface.co/spaces/riwaj43adz/repro) |
-| Training notebook / Colab | [notebooks/trainer.ipynb](notebooks/trainer.ipynb) |
+| Training Notebook (with logs & figures) | [notebooks/trainer.ipynb](notebooks/trainer.ipynb) |
 | Mini-blog / video / slides | [Blog.md](Blog.md) |
 | OpenEnv manifest | [openenv.yaml](openenv.yaml) |
 
