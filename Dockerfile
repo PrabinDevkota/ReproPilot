@@ -71,6 +71,10 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH="/app/env:$PYTHONPATH"
 
+# OpenEnv's Gradio README panel looks at /app/README.md or ENV_README_PATH.
+# The repo is copied to /app/env in this Dockerfile, so point the web UI there.
+ENV ENV_README_PATH="/app/env/README.md"
+
 # Mount Gradio OpenEnv UI at /web (matches HF Space README expectations)
 ENV ENABLE_WEB_INTERFACE=true
 
